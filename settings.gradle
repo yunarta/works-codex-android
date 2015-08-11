@@ -1,0 +1,11 @@
+include ':simple-usage'
+project(':simple-usage').projectDir = new File('sample/simple-usage')
+
+include ':codex'
+project(':codex').projectDir = new File('library')
+
+include ':codex-annotations'
+project(':codex-annotations').projectDir = new File('annotations')
+
+include ':codex-processor'
+project(':codex-processor').projectDir = new File('processor')
