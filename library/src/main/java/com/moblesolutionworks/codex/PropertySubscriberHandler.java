@@ -7,7 +7,7 @@ import java.lang.reflect.InvocationTargetException;
 /**
  * Created by yunarta on 12/8/15.
  */
-class ActionHookHandler implements Comparable<ActionHookHandler> {
+class PropertySubscriberHandler implements Comparable<PropertySubscriberHandler> {
 
     private final Object target;
 
@@ -15,7 +15,7 @@ class ActionHookHandler implements Comparable<ActionHookHandler> {
 
     private final int hashCode;
 
-    ActionHookHandler(Object target, ReflectionAnnotationProcessor.MethodInfo info) {
+    PropertySubscriberHandler(Object target, ReflectionAnnotationProcessor.MethodInfo info) {
         this.target = target;
         this.info = info;
 
@@ -24,15 +24,9 @@ class ActionHookHandler implements Comparable<ActionHookHandler> {
         hashCode = result;
     }
 
-    int actionHook(Object... args) throws InvocationTargetException {
+    void receiveProperty(Object arg) throws InvocationTargetException {
         try {
-            if (info.noModifier) {
-                info.method.invoke(target, args);
-                return 0;
-            } else {
-                return (int) info.method.invoke(target, args);
-            }
-
+            info.method.invoke(target, arg);
         } catch (IllegalAccessException e) {
             throw new AssertionError(e);
         } catch (InvocationTargetException e) {
@@ -54,12 +48,12 @@ class ActionHookHandler implements Comparable<ActionHookHandler> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        ActionHookHandler handler = (ActionHookHandler) o;
+        PropertySubscriberHandler handler = (PropertySubscriberHandler) o;
         return target.equals(handler.target) && info.equals(handler.info);
     }
 
     @Override
-    public int compareTo(@NonNull ActionHookHandler another) {
+    public int compareTo(@NonNull PropertySubscriberHandler another) {
         return info.compareTo(another.info);
     }
 }
