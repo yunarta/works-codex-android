@@ -1,8 +1,11 @@
 package com.moblesolutionworks.codex;
 
-import android.util.Log;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.util.SparseArray;
 
+import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -12,9 +15,30 @@ import java.util.List;
  * Created by yunarta on 9/8/15.
  */
 public class Codex {
-    SparseArray<List<ActionHookHandler>>        allHooks       = new SparseArray<>();
+
+    private static final int START_ACTION = 1;
+    private static final int UPDATE_PROPERTY = 2;
+
+    SparseArray<List<ActionHookHandler>> allHooks = new SparseArray<>();
     SparseArray<List<PropertySubscriberHandler>> allSubscribers = new SparseArray<>();
-    SparseArray<DefaultPropertyHandler>         allProperties  = new SparseArray<>();
+    SparseArray<DefaultPropertyHandler> allProperties = new SparseArray<>();
+
+    WeakReference<PropertySubscriberHandler[]> _subscriberHandlers;
+    WeakReference<ActionHookHandler[]> _actionHandlers;
+
+    final Handler mHandler;
+
+    public Codex() {
+        this(Looper.getMainLooper());
+    }
+
+    public Codex(Handler handler) {
+        this(handler.getLooper());
+    }
+
+    public Codex(Looper looper) {
+        mHandler = new Handler(looper, new CallbackImpl());
+    }
 
     public void register(Object object) {
         SparseArray<List<ActionHookHandler>> hooks = ReflectionAnnotationProcessor.findActionHooks(object);
@@ -46,11 +70,10 @@ public class Codex {
                 Object value;
                 try {
                     value = handler.getProperty();
+                    dispatchPropertyToSubscribers(value, allSubscribers.get(key));
                 } catch (InvocationTargetException e) {
-                    throw new RuntimeException(e);
+                    throw new RuntimeException("DefaultProperty " + handler + "throws an exception", e);
                 }
-
-                dispatchPropertyChange(value, allSubscribers.get(key));
             }
         }
 
@@ -75,16 +98,54 @@ public class Codex {
                 List<PropertySubscriberHandler> handlers = subscribers.valueAt(i);
 
                 DefaultPropertyHandler propertyHandler = allProperties.get(key);
-                if (propertyHandler == null) return;
-
-                Object value;
-                try {
-                    value = propertyHandler.getProperty();
-                } catch (InvocationTargetException e) {
-                    throw new RuntimeException(e);
+                if (propertyHandler != null) {
+                    try {
+                        Object value = propertyHandler.getProperty();
+                        dispatchPropertyToSubscribers(value, handlers);
+                    } catch (InvocationTargetException e) {
+                        throw new RuntimeException("DefaultProperty " + propertyHandler + "throws an exception", e);
+                    }
                 }
+            }
+        }
+    }
 
-                dispatchPropertyChange(value, handlers);
+    public void unregister(Object object) {
+        SparseArray<List<ActionHookHandler>> hooks = ReflectionAnnotationProcessor.findActionHooks(object);
+        int length = hooks.size();
+        if (length != 0) {
+            for (int i = 0; i < length; i++) {
+                int key = hooks.keyAt(i);
+                List<ActionHookHandler> handlers = hooks.valueAt(i);
+                List<ActionHookHandler> registeredHooks = allHooks.get(key);
+
+                registeredHooks.removeAll(handlers);
+            }
+        }
+
+        SparseArray<DefaultPropertyHandler> properties = ReflectionAnnotationProcessor.findDefaultProperties(object);
+        length = properties.size();
+        if (length != 0) {
+            for (int i = 0; i < length; i++) {
+                int key = properties.keyAt(i);
+                DefaultPropertyHandler handler = properties.valueAt(i);
+                DefaultPropertyHandler registeredHandler = allProperties.get(key);
+
+                if (handler.equals(registeredHandler)) {
+                    allProperties.remove(key);
+                }
+            }
+        }
+
+        SparseArray<List<PropertySubscriberHandler>> subscribers = ReflectionAnnotationProcessor.findPropertySubscribers(object);
+        length = hooks.size();
+        if (length != 0) {
+            for (int i = 0; i < length; i++) {
+                int key = subscribers.keyAt(i);
+                List<PropertySubscriberHandler> handlers = subscribers.valueAt(i);
+
+                List<PropertySubscriberHandler> registeredSubscribers = allSubscribers.valueAt(key);
+                registeredSubscribers.removeAll(handlers);
             }
         }
     }
@@ -94,16 +155,11 @@ public class Codex {
      */
     public void startAction(String name, Object... args) {
         int key = (name + args.length).hashCode();
-        List<ActionHookHandler> handlers = allHooks.get(key);
-        if (handlers == null) return;
 
-        ArrayList<ActionHookHandler> executingHandlers = new ArrayList<>(handlers);
-        for (ActionHookHandler handler : executingHandlers) {
-            try {
-                handler.actionHook(args);
-            } catch (InvocationTargetException e) {
-                e.printStackTrace();
-            }
+        if (Looper.myLooper() != mHandler.getLooper()) {
+            mHandler.obtainMessage(START_ACTION, key, 0, args);
+        } else {
+            dispatchStartAction(key, args);
         }
     }
 
@@ -113,31 +169,79 @@ public class Codex {
     public void updateProperty(Object owner, String name) {
         int key = name.hashCode();
 
-        DefaultPropertyHandler propertyHandler = allProperties.get(key);
-        if (propertyHandler == null) return;
-
-        if (propertyHandler.target != owner) {
-            throw new IllegalStateException("only owner can dispatch this property change");
+        if (Looper.myLooper() != mHandler.getLooper()) {
+            mHandler.obtainMessage(UPDATE_PROPERTY, key, 0, owner);
+        } else {
+            dispatchUpdateProperty(owner, key);
         }
-
-        Object value;
-        try {
-            value = propertyHandler.getProperty();
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
-        }
-
-        dispatchPropertyChange(value, allSubscribers.get(key));
     }
 
-    private void dispatchPropertyChange(Object value, List<PropertySubscriberHandler> handlers) {
-        if (handlers == null) return;
+    private void dispatchPropertyToSubscribers(Object value, List<PropertySubscriberHandler> handlers) {
+        if (handlers == null || handlers.isEmpty()) return;
 
-        for (PropertySubscriberHandler handler : handlers) {
+        if (_subscriberHandlers == null || _subscriberHandlers.get() == null) {
+            _subscriberHandlers = new WeakReference<>(new PropertySubscriberHandler[handlers.size()]);
+        }
+
+        for (PropertySubscriberHandler handler : handlers.toArray(_subscriberHandlers.get())) {
             try {
                 handler.receiveProperty(value);
             } catch (InvocationTargetException e) {
+                throw new RuntimeException("Could not dispatch property " + value + " to " + handler, e);
+            }
+        }
+    }
+
+    private class CallbackImpl implements Handler.Callback {
+
+        @Override
+        public boolean handleMessage(Message msg) {
+            switch (msg.what) {
+                case START_ACTION: {
+                    dispatchStartAction(msg.arg1, (Object[]) msg.obj);
+                    break;
+                }
+
+                case UPDATE_PROPERTY: {
+                    dispatchUpdateProperty(msg.obj, msg.arg1);
+                    break;
+                }
+            }
+
+            return true;
+        }
+    }
+
+    private void dispatchStartAction(int key, Object[] args) {
+        List<ActionHookHandler> handlers = allHooks.get(key);
+        if (handlers == null) return;
+
+        if (_actionHandlers == null || _actionHandlers.get() == null) {
+            _actionHandlers = new WeakReference<>(new ActionHookHandler[handlers.size()]);
+        }
+
+        for (ActionHookHandler handler : handlers.toArray(_actionHandlers.get())) {
+            try {
+                handler.actionHook(args);
+            } catch (InvocationTargetException e) {
                 e.printStackTrace();
+            }
+        }
+    }
+
+    private void dispatchUpdateProperty(Object owner, int key) {
+        DefaultPropertyHandler propertyHandler = allProperties.get(key);
+        if (propertyHandler != null) {
+            if (propertyHandler.target != owner) {
+                throw new IllegalStateException("only owner can dispatch this property change");
+            }
+
+            List<PropertySubscriberHandler> handlers = allSubscribers.get(key);
+            try {
+                Object value = propertyHandler.getProperty();
+                dispatchPropertyToSubscribers(value, handlers);
+            } catch (InvocationTargetException e) {
+                throw new RuntimeException("DefaultProperty " + propertyHandler + "throws an exception", e);
             }
         }
     }
