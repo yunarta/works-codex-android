@@ -3,9 +3,15 @@ package com.mobilesolutionworks.codex.internal;
 import com.jamesmurty.utils.XMLBuilder2;
 import com.mobilesolutionworks.codex.Action;
 import com.mobilesolutionworks.codex.ActionHook;
-import com.mobilesolutionworks.codex.ActionInfo;
+import com.mobilesolutionworks.codex.ActionProvider;
 import com.mobilesolutionworks.codex.Property;
 import com.mobilesolutionworks.codex.PropertySubscriber;
+import com.mobilesolutionworks.codex.internal.doclet.ActionDoclet;
+import com.mobilesolutionworks.codex.internal.doclet.ActionHookDoclet;
+import com.mobilesolutionworks.codex.internal.doclet.EmitterDoclet;
+import com.mobilesolutionworks.codex.internal.doclet.PropertyDoclet;
+import com.mobilesolutionworks.codex.internal.doclet.PropertySubscriberDoclet;
+import com.mobilesolutionworks.codex.internal.doclet.ReceiverDoclet;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -23,10 +29,7 @@ import java.util.TreeSet;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
 
 /**
@@ -34,130 +37,8 @@ import javax.tools.Diagnostic;
  */
 public class AnnotationProcessor extends AbstractProcessor {
 
-    class ActionInfoDoc {
-
-        String owner;
-
-        String name;
-
-        String[] args;
-
-        public String key() {
-            return name + args.length;
-        }
-
-        public String method() {
-            if (args.length > 0) {
-                StringBuilder sb = new StringBuilder();
-                for (String arg : args) {
-                    sb.append(", ").append(arg);
-                }
-                sb.delete(0, 2);
-
-                return name + "(" + sb.toString() + ")";
-            } else {
-                return name + "()";
-            }
-        }
-    }
-
-    class PropertyDoc {
-
-        String owner;
-
-        String name;
-
-        String type;
-
-        String method;
-    }
-
-    class EmitterDoc {
-
-        Map<String, ActionInfoDoc> declaredActions = new TreeMap<>();
-
-        Map<String, PropertyDoc> declaredProperties = new TreeMap<>();
-    }
-
-    class ActionHookInfoDoc implements Comparable<ActionHookInfoDoc> {
-
-        String name;
-
-        String method;
-
-        String owner;
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            ActionHookInfoDoc doc = (ActionHookInfoDoc) o;
-
-            if (!name.equals(doc.name)) return false;
-            if (!method.equals(doc.method)) return false;
-            return owner.equals(doc.owner);
-
-        }
-
-        @Override
-        public int hashCode() {
-            int result = name.hashCode();
-            result = 31 * result + method.hashCode();
-            result = 31 * result + owner.hashCode();
-            return result;
-        }
-
-        @Override
-        public int compareTo(ActionHookInfoDoc o) {
-            return name.compareTo(o.name);
-        }
-    }
-
-    class PropertySubscriberInfoDoc implements Comparable<PropertySubscriberInfoDoc> {
-
-        String name;
-
-        String method;
-
-        String owner;
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            PropertySubscriberInfoDoc doc = (PropertySubscriberInfoDoc) o;
-
-            if (!name.equals(doc.name)) return false;
-            if (!method.equals(doc.method)) return false;
-            return owner.equals(doc.owner);
-
-        }
-
-        @Override
-        public int hashCode() {
-            int result = name.hashCode();
-            result = 31 * result + method.hashCode();
-            result = 31 * result + owner.hashCode();
-            return result;
-        }
-
-        @Override
-        public int compareTo(PropertySubscriberInfoDoc o) {
-            return name.compareTo(o.name);
-        }
-    }
-
-    class ReceiverDoc {
-
-        Map<String, Set<ActionHookInfoDoc>> declaredActionHooks = new TreeMap<>();
-
-        Map<String, Set<PropertySubscriberInfoDoc>> declaredPropertySubscribers = new TreeMap<>();
-    }
-
-    Map<String, EmitterDoc>  mEmitterDocMap = new TreeMap<>();
-    Map<String, ReceiverDoc> mReceiverMap   = new TreeMap<>();
+    Map<String, EmitterDoclet> mEmitterDocMap = new TreeMap<>();
+    Map<String, ReceiverDoclet> mReceiverMap = new TreeMap<>();
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment env) {
@@ -173,115 +54,83 @@ public class AnnotationProcessor extends AbstractProcessor {
 
         Set<? extends Element> elements;
 
-        elements = env.getElementsAnnotatedWith(Action.class);
+        elements = env.getElementsAnnotatedWith(ActionProvider.class);
         for (Element element : elements) {
-            Action annotation = element.getAnnotation(Action.class);
-            TypeElement typeElement = (TypeElement) element;
+            TypeElement enclosingClass = (TypeElement) element;
+            String className = enclosingClass.getQualifiedName().toString();
 
-            String key = typeElement.getQualifiedName().toString();
+            EmitterDoclet emitter = mEmitterDocMap.getOrDefault(className, new EmitterDoclet());
+            mEmitterDocMap.put(className, emitter);
 
-            EmitterDoc ci = mEmitterDocMap.getOrDefault(key, new EmitterDoc());
-            mEmitterDocMap.put(key, ci);
+            ActionProvider annotation = element.getAnnotation(ActionProvider.class);
+            Action[] actionInfos = annotation.actions();
+            for (Action action : actionInfos) {
+                ActionDoclet doclet = new ActionDoclet(className, action);
 
-            ActionInfo[] infos = annotation.actions();
-            for (ActionInfo info : infos) {
-                ActionInfoDoc doc = new ActionInfoDoc();
-                doc.owner = key;
-                doc.name = info.name();
-                doc.args = info.args();
-
-                String actionKey = doc.key();
-                if (ci.declaredActions.containsKey(actionKey)) {
-                    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, key + " has duplicate decration of action " + doc.name);
+                String key = doclet.key();
+                if (emitter.declaredActions.containsKey(key)) {
+                    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, className + " has overloaded " + doclet);
                 }
 
-                ci.declaredActions.put(actionKey, doc);
+                emitter.declaredActions.put(key, doclet);
             }
         }
 
         elements = env.getElementsAnnotatedWith(ActionHook.class);
         for (Element element : elements) {
-            ActionHook annotation = element.getAnnotation(ActionHook.class);
             TypeElement typeElement = (TypeElement) element.getEnclosingElement();
+            String className = typeElement.getQualifiedName().toString();
 
-            ExecutableElement variable = (ExecutableElement) element;
-            List<? extends VariableElement> parameters = variable.getParameters();
-            int argc = parameters.size();
+            ReceiverDoclet receiver = mReceiverMap.getOrDefault(className, new ReceiverDoclet());
+            mReceiverMap.put(className, receiver);
 
-            StringBuffer sb = new StringBuffer();
-            for (VariableElement param : parameters) {
-                sb.append(", ").append(param.getSimpleName());
-            }
-            if (sb.length() > 0) {
-                sb.delete(0, 2);
-            }
+            ActionHook annotation = element.getAnnotation(ActionHook.class);
+            ActionHookDoclet doclet = new ActionHookDoclet(className, annotation, element);
 
-            String methodName = element.getSimpleName().toString() + "(" + sb.toString() + ")";
+            String signature = doclet.key();
+            Set<ActionHookDoclet> doclets = receiver.declaredActionHooks.getOrDefault(signature, new TreeSet<ActionHookDoclet>());
+            receiver.declaredActionHooks.put(signature, doclets);
 
-            String key = typeElement.getQualifiedName().toString();
-            String hookKey = annotation.name() + argc;
-
-            ReceiverDoc info = mReceiverMap.getOrDefault(key, new ReceiverDoc());
-            mReceiverMap.put(key, info);
-
-            Set<ActionHookInfoDoc> set = info.declaredActionHooks.getOrDefault(hookKey, new TreeSet<ActionHookInfoDoc>());
-            info.declaredActionHooks.put(hookKey, set);
-
-            ActionHookInfoDoc doc = new ActionHookInfoDoc();
-            doc.name = annotation.name();
-            doc.method = methodName;
-            doc.owner = key;
-
-            set.add(doc);
+            doclets.add(doclet);
         }
 
         elements = env.getElementsAnnotatedWith(Property.class);
         for (Element element : elements) {
-            Property annotation = element.getAnnotation(Property.class);
             TypeElement typeElement = (TypeElement) element.getEnclosingElement();
+            String className = typeElement.getQualifiedName().toString();
 
-            String key = typeElement.getQualifiedName().toString();
+            EmitterDoclet emitter = mEmitterDocMap.getOrDefault(className, new EmitterDoclet());
+            mEmitterDocMap.put(className, emitter);
 
-            EmitterDoc info = mEmitterDocMap.getOrDefault(key, new EmitterDoc());
-            mEmitterDocMap.put(key, info);
+            Property annotation = element.getAnnotation(Property.class);
+            PropertyDoclet doclet = new PropertyDoclet(className, annotation, element);
 
-            if (info.declaredProperties.containsKey(annotation.name())) {
-                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, key + " have duplicate declaration for property " + annotation.name());
+            if (emitter.declaredProperties.containsKey(doclet.key())) {
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, className + " have duplicate declaration for property " + doclet.name);
             }
 
-            ExecutableElement variable = (ExecutableElement) element;
-            TypeMirror type = variable.getReturnType();
-
-            PropertyDoc doc = new PropertyDoc();
-            doc.name = annotation.name();
-            doc.method = element.getSimpleName().toString();
-            doc.owner = key;
-            doc.type = type.toString();
-            info.declaredProperties.put(annotation.name(), doc);
+            emitter.declaredProperties.put(doclet.key(), doclet);
         }
 
         elements = env.getElementsAnnotatedWith(PropertySubscriber.class);
         for (Element element : elements) {
-            PropertySubscriber annotation = element.getAnnotation(PropertySubscriber.class);
             TypeElement typeElement = (TypeElement) element.getEnclosingElement();
+            String className = typeElement.getQualifiedName().toString();
 
-            String key = typeElement.getQualifiedName().toString();
-            String subscriberKey = annotation.name();
+            ReceiverDoclet receiver = mReceiverMap.getOrDefault(className, new ReceiverDoclet());
+            mReceiverMap.put(className, receiver);
 
-            ReceiverDoc info = mReceiverMap.getOrDefault(key, new ReceiverDoc());
-            mReceiverMap.put(key, info);
+            PropertySubscriber annotation = element.getAnnotation(PropertySubscriber.class);
+            PropertySubscriberDoclet doclet = new PropertySubscriberDoclet(className, annotation, element);
+            if (!doclet.isValid()) {
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, className + " have invalid declaration for property subscriber " + doclet);
+            }
 
-            Set<PropertySubscriberInfoDoc> set = info.declaredPropertySubscribers.getOrDefault(subscriberKey, new TreeSet<PropertySubscriberInfoDoc>());
-            info.declaredPropertySubscribers.put(subscriberKey, set);
+            Set<PropertySubscriberDoclet> doclets = receiver.declaredPropertySubscribers.getOrDefault(doclet.name, new TreeSet<PropertySubscriberDoclet>());
+            receiver.declaredPropertySubscribers.put(doclet.name, doclets);
 
-            PropertySubscriberInfoDoc doc = new PropertySubscriberInfoDoc();
-            doc.name = annotation.name();
-            doc.method = element.getSimpleName().toString();
-            doc.owner = key;
-
-            set.add(doc);
+            doclets.add(doclet);
         }
-
 
         XMLBuilder2 codex = XMLBuilder2.create("codex");
 
@@ -291,50 +140,46 @@ public class AnnotationProcessor extends AbstractProcessor {
         XMLBuilder2 actions = codex.e("actions");
         XMLBuilder2 properties = codex.e("properties");
 
-        Map<String, ActionInfoDoc> allActions = new TreeMap<>();
-        Map<String, PropertyDoc> allProperties = new TreeMap<>();
-        Map<String, List<ActionHookInfoDoc>> allActionHooks = new TreeMap<>();
-        Map<String, List<PropertySubscriberInfoDoc>> allPropertySubscribers = new TreeMap<>();
+        Map<String, ActionDoclet> allActions = new TreeMap<>();
+        Map<String, PropertyDoclet> allProperties = new TreeMap<>();
+        Map<String, List<ActionHookDoclet>> allActionHooks = new TreeMap<>();
+        Map<String, List<PropertySubscriberDoclet>> allPropertySubscribers = new TreeMap<>();
 
 
-        for (Map.Entry<String, EmitterDoc> entry : mEmitterDocMap.entrySet()) {
+        for (Map.Entry<String, EmitterDoclet> entry : mEmitterDocMap.entrySet()) {
             String name = entry.getKey();
-            EmitterDoc value = entry.getValue();
+            EmitterDoclet value = entry.getValue();
 
-            XMLBuilder2 entity = emitters.e("entity").a("type", name);
+            XMLBuilder2 entity = emitters.e("emitter").a("class", name);
             XMLBuilder2 iterator = entity.e("actions");
-            for (Map.Entry<String, ActionInfoDoc> action : value.declaredActions.entrySet()) {
-                String key = action.getKey();
-                ActionInfoDoc doc = action.getValue();
+            for (ActionDoclet doclet : value.declaredActions.values()) {
+                String key = doclet.key();
 
-                boolean conflict = allActions.containsKey(key);
-                if (conflict) {
-                    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, doc.method() + " had been declared in " + allActions.get(key).owner);
+                if (allActionHooks.containsKey(key)) {
+                    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, doclet + " had same signature with " + allActions.get(key));
                 }
 
-                allActions.put(key, doc);
+                allActions.put(key, doclet);
 
                 XMLBuilder2 actionTag = iterator.e("action");
-                actionTag.a("name", doc.method());
+                actionTag.a("name", doclet.action);
+                actionTag.a("signature", doclet.signature());
                 iterator = actionTag.up();
             }
 
             iterator = entity.e("properties");
-            for (Map.Entry<String, PropertyDoc> property : value.declaredProperties.entrySet()) {
-                String key = property.getKey();
+            for (PropertyDoclet doclet : value.declaredProperties.values()) {
+                String key = doclet.key();
 
-                boolean conflict = allProperties.containsKey(key);
-                if (conflict) {
-                    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, property + " had been declared in " + allProperties.get(key));
+                if (allProperties.containsKey(key)) {
+                    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, doclet + " had been declared, " + allProperties.get(key));
                 }
 
-                PropertyDoc doc = property.getValue();
-                allProperties.put(key, doc);
-
+                allProperties.put(key, doclet);
                 XMLBuilder2 propertyTag = iterator.e("property");
-                propertyTag.a("name", doc.name);
-                propertyTag.a("method", doc.method);
-                propertyTag.a("type", doc.type);
+                propertyTag.a("name", doclet.name);
+                propertyTag.a("type", doclet.type.toString());
+                propertyTag.a("method", doclet.method);
                 iterator = propertyTag.up();
             }
 
@@ -344,47 +189,47 @@ public class AnnotationProcessor extends AbstractProcessor {
 
         emitters.up();
 
-        for (Map.Entry<String, ReceiverDoc> entry : mReceiverMap.entrySet()) {
+        for (Map.Entry<String, ReceiverDoclet> entry : mReceiverMap.entrySet()) {
             String name = entry.getKey();
-            ReceiverDoc value = entry.getValue();
+            ReceiverDoclet value = entry.getValue();
 
-            XMLBuilder2 entity = receivers.e("receiver").a("type", name);
+            XMLBuilder2 entity = receivers.e("receiver").a("class", name);
 
             XMLBuilder2 iterator = entity.e("actionHooks");
-            for (Map.Entry<String, Set<ActionHookInfoDoc>> docs : value.declaredActionHooks.entrySet()) {
-                String hookKey = docs.getKey();
-                Set<ActionHookInfoDoc> set = docs.getValue();
+            for (Map.Entry<String, Set<ActionHookDoclet>> hooks : value.declaredActionHooks.entrySet()) {
+                String key = hooks.getKey();
 
-
-                for (ActionHookInfoDoc doc : set) {
+                Set<ActionHookDoclet> doclets = hooks.getValue();
+                for (ActionHookDoclet doclet : doclets) {
                     XMLBuilder2 actionTag = iterator.e("actionHook");
-                    actionTag.a("name", doc.name);
-                    actionTag.a("method", doc.method);
+                    actionTag.a("name", doclet.action);
+                    actionTag.a("method", doclet.signature());
                     iterator = actionTag.up();
 
-                    List<ActionHookInfoDoc> list = allActionHooks.getOrDefault(hookKey, new ArrayList<ActionHookInfoDoc>());
-                    allActionHooks.put(hookKey, list);
-
-                    list.add(doc);
                 }
+
+                List<ActionHookDoclet> list = allActionHooks.getOrDefault(key, new ArrayList<ActionHookDoclet>());
+                allActionHooks.put(key, list);
+
+                list.addAll(doclets);
             }
 
             iterator = entity.e("propertySubscribers");
-            for (Map.Entry<String, Set<PropertySubscriberInfoDoc>> eSubscriber : value.declaredPropertySubscribers.entrySet()) {
-                String hookKey = eSubscriber.getKey();
-                Set<PropertySubscriberInfoDoc> set = eSubscriber.getValue();
+            for (Map.Entry<String, Set<PropertySubscriberDoclet>> subscribers : value.declaredPropertySubscribers.entrySet()) {
+                String key = subscribers.getKey();
 
-                for (PropertySubscriberInfoDoc doc : set) {
+                Set<PropertySubscriberDoclet> doclets = subscribers.getValue();
+                for (PropertySubscriberDoclet doclet : doclets) {
                     XMLBuilder2 actionTag = iterator.e("propertySubscriber");
-                    actionTag.a("name", doc.name);
-                    actionTag.a("method", doc.method);
+                    actionTag.a("name", doclet.name);
+                    actionTag.a("method", doclet.signature());
                     iterator = actionTag.up();
-
-                    List<PropertySubscriberInfoDoc> list = allPropertySubscribers.getOrDefault(hookKey, new ArrayList<PropertySubscriberInfoDoc>());
-                    allPropertySubscribers.put(hookKey, list);
-
-                    list.add(doc);
                 }
+
+                List<PropertySubscriberDoclet> list = allPropertySubscribers.getOrDefault(key, new ArrayList<PropertySubscriberDoclet>());
+                allPropertySubscribers.put(key, list);
+
+                list.addAll(doclets);
             }
 
             iterator.up();
@@ -393,20 +238,20 @@ public class AnnotationProcessor extends AbstractProcessor {
 
         receivers.up();
 
-        for (Map.Entry<String, ActionInfoDoc> entry : allActions.entrySet()) {
+        for (Map.Entry<String, ActionDoclet> entry : allActions.entrySet()) {
+            ActionDoclet doclet = entry.getValue();
+
             XMLBuilder2 actionTag = actions.e("action");
+            actionTag.a("name", doclet.signature());
+            actionTag.a("class", doclet.className);
 
-            ActionInfoDoc actionInfo = entry.getValue();
-            actionTag.a("name", actionInfo.method());
-            actionTag.a("owner", actionInfo.owner);
-
-            List<ActionHookInfoDoc> actionHookInfo = allActionHooks.remove(actionInfo.key());
-            if (actionHookInfo != null) {
-                for (ActionHookInfoDoc hook : actionHookInfo) {
+            List<ActionHookDoclet> hooks = allActionHooks.remove(doclet.key());
+            if (hooks != null) {
+                for (ActionHookDoclet hook : hooks) {
                     XMLBuilder2 hookTag = actionTag.e("hook");
-                    hookTag.a("name", hook.name);
-                    hookTag.a("method", hook.method);
-                    hookTag.a("owner", hook.owner);
+//                    hookTag.a("name", hook.action);
+                    hookTag.a("method", hook.signature());
+                    hookTag.a("class", hook.className);
                     hookTag.up();
                 }
             }
@@ -415,23 +260,22 @@ public class AnnotationProcessor extends AbstractProcessor {
         }
         actions.up();
 
+        for (Map.Entry<String, PropertyDoclet> entry : allProperties.entrySet()) {
+            PropertyDoclet doclet = entry.getValue();
 
-        for (Map.Entry<String, PropertyDoc> entry : allProperties.entrySet()) {
             XMLBuilder2 propertyTag = properties.e("property");
-            PropertyDoc doc = entry.getValue();
+            propertyTag.a("name", doclet.name);
+            propertyTag.a("method", doclet.method);
+            propertyTag.a("type", doclet.type.toString());
+            propertyTag.a("class", doclet.className);
 
-            propertyTag.a("name", doc.name);
-            propertyTag.a("method", doc.method);
-            propertyTag.a("type", doc.type);
-            propertyTag.a("owner", doc.owner);
-
-            List<PropertySubscriberInfoDoc> subscriberInfoDocs = allPropertySubscribers.remove(doc.name);
-            if (subscriberInfoDocs != null) {
-                for (PropertySubscriberInfoDoc subscriber : subscriberInfoDocs) {
+            List<PropertySubscriberDoclet> subscribers = allPropertySubscribers.remove(doclet.name);
+            if (subscribers != null) {
+                for (PropertySubscriberDoclet subscriber : subscribers) {
                     XMLBuilder2 hookTag = propertyTag.e("subscriber");
-                    hookTag.a("name", subscriber.name);
-                    hookTag.a("method", subscriber.method);
-                    hookTag.a("owner", subscriber.owner);
+//                    hookTag.a("name", subscriber.name);
+                    hookTag.a("method", subscriber.signature());
+                    hookTag.a("owner", subscriber.className);
                     hookTag.up();
                 }
             }
@@ -442,34 +286,29 @@ public class AnnotationProcessor extends AbstractProcessor {
 
         XMLBuilder2 orphanHooks = codex.e("orphan-actionHooks");
 
-        for (Map.Entry<String, List<ActionHookInfoDoc>> entry : allActionHooks.entrySet()) {
-            List<ActionHookInfoDoc> actionHookInfo = entry.getValue();
-            if (actionHookInfo != null) {
-                for (ActionHookInfoDoc hook : actionHookInfo) {
-                    XMLBuilder2 hookTag = orphanHooks.e("hook");
-                    hookTag.a("name", hook.name);
-                    hookTag.a("method", hook.method);
-                    hookTag.a("owner", hook.owner);
-                    hookTag.up();
-                }
+        for (Map.Entry<String, List<ActionHookDoclet>> entry : allActionHooks.entrySet()) {
+            List<ActionHookDoclet> doclets = entry.getValue();
+            for (ActionHookDoclet doclet : doclets) {
+                XMLBuilder2 hookTag = orphanHooks.e("hook");
+                hookTag.a("name", doclet.action);
+                hookTag.a("method", doclet.signature());
+                hookTag.a("class", doclet.className);
+                hookTag.up();
             }
         }
         orphanHooks.up();
 
         XMLBuilder2 orphanSubscriber = codex.e("orphan-subscriber");
 
-        for (Map.Entry<String, List<PropertySubscriberInfoDoc>> entry : allPropertySubscribers.entrySet()) {
-            List<PropertySubscriberInfoDoc> subscriberInfoDocs = entry.getValue();
-            if (subscriberInfoDocs != null) {
-                for (PropertySubscriberInfoDoc subscriber : subscriberInfoDocs) {
-                    XMLBuilder2 hookTag = orphanSubscriber.e("subscriber");
-                    hookTag.a("name", subscriber.name);
-                    hookTag.a("method", subscriber.method);
-                    hookTag.a("owner", subscriber.owner);
-                    hookTag.up();
-                }
+        for (Map.Entry<String, List<PropertySubscriberDoclet>> entry : allPropertySubscribers.entrySet()) {
+            List<PropertySubscriberDoclet> doclets = entry.getValue();
+            for (PropertySubscriberDoclet doclet : doclets) {
+                XMLBuilder2 hookTag = orphanSubscriber.e("subscriber");
+                hookTag.a("name", doclet.name);
+                hookTag.a("method", doclet.signature());
+                hookTag.a("class", doclet.className);
+                hookTag.up();
             }
-
         }
         orphanSubscriber.up();
 
@@ -497,7 +336,7 @@ public class AnnotationProcessor extends AbstractProcessor {
     @Override
     public Set<String> getSupportedAnnotationTypes() {
         HashSet<String> supportedAnnotationTypes = new HashSet<>();
-        supportedAnnotationTypes.add(Action.class.getCanonicalName());
+        supportedAnnotationTypes.add(ActionProvider.class.getCanonicalName());
         supportedAnnotationTypes.add(ActionHook.class.getCanonicalName());
         supportedAnnotationTypes.add(Property.class.getCanonicalName());
         supportedAnnotationTypes.add(PropertySubscriber.class.getCanonicalName());
