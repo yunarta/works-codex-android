@@ -1,7 +1,12 @@
-package com.moblesolutionworks.codex;
+package com.mobilesolutionworks.codex;
 
 
 import android.util.SparseArray;
+
+import com.moblesolutionworks.codex.ActionHook;
+import com.moblesolutionworks.codex.InheritCodex;
+import com.moblesolutionworks.codex.Property;
+import com.moblesolutionworks.codex.PropertySubscriber;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;

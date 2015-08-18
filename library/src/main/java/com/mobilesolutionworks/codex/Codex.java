@@ -1,4 +1,4 @@
-package com.moblesolutionworks.codex;
+package com.mobilesolutionworks.codex;
 
 import android.os.Handler;
 import android.os.Looper;

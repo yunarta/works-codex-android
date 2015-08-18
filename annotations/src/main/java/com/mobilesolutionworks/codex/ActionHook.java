@@ -1,4 +1,4 @@
-package com.moblesolutionworks.codex;
+package com.mobilesolutionworks.codex;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
