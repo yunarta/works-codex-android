@@ -5,7 +5,7 @@ import java.lang.reflect.InvocationTargetException;
 /**
  * Created by yunarta on 17/8/15.
  */
-class DefaultPropertyHandler {
+class PropertyHandler {
 
     Object target;
 
@@ -13,7 +13,7 @@ class DefaultPropertyHandler {
 
     private final int hashCode;
 
-    DefaultPropertyHandler(Object target, ReflectionAnnotationProcessor.MethodInfo info) {
+    PropertyHandler(Object target, ReflectionAnnotationProcessor.MethodInfo info) {
         this.target = target;
         this.info = info;
 
@@ -42,7 +42,7 @@ class DefaultPropertyHandler {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        DefaultPropertyHandler handler = (DefaultPropertyHandler) o;
+        PropertyHandler handler = (PropertyHandler) o;
         return target.equals(handler.target) && info.equals(handler.info);
 
     }

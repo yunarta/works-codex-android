@@ -16,15 +16,15 @@ import java.util.List;
  */
 public class Codex {
 
-    private static final int START_ACTION = 1;
+    private static final int START_ACTION    = 1;
     private static final int UPDATE_PROPERTY = 2;
 
-    SparseArray<List<ActionHookHandler>> allHooks = new SparseArray<>();
+    SparseArray<List<ActionHookHandler>>         allHooks       = new SparseArray<>();
     SparseArray<List<PropertySubscriberHandler>> allSubscribers = new SparseArray<>();
-    SparseArray<DefaultPropertyHandler> allProperties = new SparseArray<>();
+    SparseArray<PropertyHandler>                 allProperties  = new SparseArray<>();
 
     WeakReference<PropertySubscriberHandler[]> _subscriberHandlers;
-    WeakReference<ActionHookHandler[]> _actionHandlers;
+    WeakReference<ActionHookHandler[]>         _actionHandlers;
 
     final Handler mHandler;
 
@@ -58,13 +58,13 @@ public class Codex {
         }
 
         // check if the new object has property, and dispatch to existing property subscriber
-        SparseArray<DefaultPropertyHandler> properties = ReflectionAnnotationProcessor.findDefaultProperties(object);
+        SparseArray<PropertyHandler> properties = ReflectionAnnotationProcessor.findDefaultProperties(object);
         if (properties != null && properties.size() != 0) {
             length = properties.size();
 
             for (int i = 0; i < length; i++) {
                 int key = properties.keyAt(i);
-                DefaultPropertyHandler handler = properties.valueAt(i);
+                PropertyHandler handler = properties.valueAt(i);
                 allProperties.put(key, handler);
 
                 Object value;
@@ -72,7 +72,7 @@ public class Codex {
                     value = handler.getProperty();
                     dispatchPropertyToSubscribers(value, allSubscribers.get(key));
                 } catch (InvocationTargetException e) {
-                    throw new RuntimeException("DefaultProperty " + handler + "throws an exception", e);
+                    throw new RuntimeException("Property " + handler + "throws an exception", e);
                 }
             }
         }
@@ -97,13 +97,13 @@ public class Codex {
                 int key = subscribers.keyAt(i);
                 List<PropertySubscriberHandler> handlers = subscribers.valueAt(i);
 
-                DefaultPropertyHandler propertyHandler = allProperties.get(key);
+                PropertyHandler propertyHandler = allProperties.get(key);
                 if (propertyHandler != null) {
                     try {
                         Object value = propertyHandler.getProperty();
                         dispatchPropertyToSubscribers(value, handlers);
                     } catch (InvocationTargetException e) {
-                        throw new RuntimeException("DefaultProperty " + propertyHandler + "throws an exception", e);
+                        throw new RuntimeException("Property " + propertyHandler + "throws an exception", e);
                     }
                 }
             }
@@ -123,13 +123,13 @@ public class Codex {
             }
         }
 
-        SparseArray<DefaultPropertyHandler> properties = ReflectionAnnotationProcessor.findDefaultProperties(object);
+        SparseArray<PropertyHandler> properties = ReflectionAnnotationProcessor.findDefaultProperties(object);
         length = properties.size();
         if (length != 0) {
             for (int i = 0; i < length; i++) {
                 int key = properties.keyAt(i);
-                DefaultPropertyHandler handler = properties.valueAt(i);
-                DefaultPropertyHandler registeredHandler = allProperties.get(key);
+                PropertyHandler handler = properties.valueAt(i);
+                PropertyHandler registeredHandler = allProperties.get(key);
 
                 if (handler.equals(registeredHandler)) {
                     allProperties.remove(key);
@@ -230,7 +230,7 @@ public class Codex {
     }
 
     private void dispatchUpdateProperty(Object owner, int key) {
-        DefaultPropertyHandler propertyHandler = allProperties.get(key);
+        PropertyHandler propertyHandler = allProperties.get(key);
         if (propertyHandler != null) {
             if (propertyHandler.target != owner) {
                 throw new IllegalStateException("only owner can dispatch this property change");
@@ -241,7 +241,7 @@ public class Codex {
                 Object value = propertyHandler.getProperty();
                 dispatchPropertyToSubscribers(value, handlers);
             } catch (InvocationTargetException e) {
-                throw new RuntimeException("DefaultProperty " + propertyHandler + "throws an exception", e);
+                throw new RuntimeException("Property " + propertyHandler + "throws an exception", e);
             }
         }
     }

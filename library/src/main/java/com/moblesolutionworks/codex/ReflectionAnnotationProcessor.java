@@ -47,7 +47,7 @@ public class ReflectionAnnotationProcessor {
             this(annotation.name().hashCode(), 0, false, method);
         }
 
-        public MethodInfo(DefaultProperty annotation, Method method) {
+        public MethodInfo(Property annotation, Method method) {
             this(annotation.name().hashCode(), 0, annotation.cached(), method);
         }
 
@@ -150,8 +150,8 @@ public class ReflectionAnnotationProcessor {
                     }
 
                     methods.add(new MethodInfo(subscriber, method));
-                } else if (method.isAnnotationPresent(DefaultProperty.class)) {
-                    DefaultProperty property = method.getAnnotation(DefaultProperty.class);
+                } else if (method.isAnnotationPresent(Property.class)) {
+                    Property property = method.getAnnotation(Property.class);
 
                     Class<?>[] params = method.getParameterTypes();
                     Class<?> returnType = method.getReturnType();
@@ -159,7 +159,7 @@ public class ReflectionAnnotationProcessor {
                     if ((params.length != 0) || ((method.getModifiers() & Modifier.PUBLIC) == 0) || returnType.equals(Void.TYPE)) {
                         throw new IllegalArgumentException(
                                 String.format(Locale.ENGLISH,
-                                        "Method %s has @DefaultProperty annotation but has argumets", method)
+                                        "Method %s has @Property annotation but has argumets", method)
                         );
                     }
 
@@ -220,10 +220,10 @@ public class ReflectionAnnotationProcessor {
         return actionHookHandlers;
     }
 
-    public static SparseArray<DefaultPropertyHandler> findDefaultProperties(Object object) {
+    public static SparseArray<PropertyHandler> findDefaultProperties(Object object) {
         Class<?> cl = object.getClass();
 
-        SparseArray<DefaultPropertyHandler> defaultPropertyHandlers = new SparseArray<>();
+        SparseArray<PropertyHandler> defaultPropertyHandlers = new SparseArray<>();
 
         SparseArray<MethodInfo> defaultProperties = allDefaultProperties.get(cl.hashCode());
         if (defaultProperties == null) {
@@ -238,7 +238,7 @@ public class ReflectionAnnotationProcessor {
 
                 MethodInfo methodInfo = defaultProperties.valueAt(i);
 
-                DefaultPropertyHandler handler = new DefaultPropertyHandler(object, methodInfo);
+                PropertyHandler handler = new PropertyHandler(object, methodInfo);
                 defaultPropertyHandlers.put(key, handler);
             }
         }
