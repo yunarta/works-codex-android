@@ -153,6 +153,18 @@ public class Codex {
     /**
      * Publish an action to the system and allow the hook to pick it up.
      */
+    public void startActionEnforced(Object object, String name, Object... args) {
+        int key = (name + args.length).hashCode();
+
+        if (Looper.myLooper() != mHandler.getLooper()) {
+            mHandler.obtainMessage(START_ACTION, key, 0, args);
+        } else {
+            dispatchStartAction(key, args);
+        }
+    }
+    /**
+     * Publish an action to the system and allow the hook to pick it up.
+     */
     public void startAction(String name, Object... args) {
         int key = (name + args.length).hashCode();
 
