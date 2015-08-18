@@ -7,5 +7,5 @@ public @interface ActionInfo {
 
     String name();
 
-    String[] args();
+    String[] args() default {};
 }
