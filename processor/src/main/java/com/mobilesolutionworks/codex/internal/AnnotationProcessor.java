@@ -440,6 +440,40 @@ public class AnnotationProcessor extends AbstractProcessor {
         }
         properties.up();
 
+        XMLBuilder2 orphanHooks = codex.e("orphan-actionHooks");
+
+        for (Map.Entry<String, List<ActionHookInfoDoc>> entry : allActionHooks.entrySet()) {
+            List<ActionHookInfoDoc> actionHookInfo = entry.getValue();
+            if (actionHookInfo != null) {
+                for (ActionHookInfoDoc hook : actionHookInfo) {
+                    XMLBuilder2 hookTag = orphanHooks.e("hook");
+                    hookTag.a("name", hook.name);
+                    hookTag.a("method", hook.method);
+                    hookTag.a("owner", hook.owner);
+                    hookTag.up();
+                }
+            }
+        }
+        orphanHooks.up();
+
+        XMLBuilder2 orphanSubscriber = codex.e("orphan-subscriber");
+
+        for (Map.Entry<String, List<PropertySubscriberInfoDoc>> entry : allPropertySubscribers.entrySet()) {
+            List<PropertySubscriberInfoDoc> subscriberInfoDocs = entry.getValue();
+            if (subscriberInfoDocs != null) {
+                for (PropertySubscriberInfoDoc subscriber : subscriberInfoDocs) {
+                    XMLBuilder2 hookTag = orphanSubscriber.e("subscriber");
+                    hookTag.a("name", subscriber.name);
+                    hookTag.a("method", subscriber.method);
+                    hookTag.a("owner", subscriber.owner);
+                    hookTag.up();
+                }
+            }
+
+        }
+        orphanSubscriber.up();
+
+
         codex.up();
         codex.toWriter(true, writer, null);
         writer.flush();
