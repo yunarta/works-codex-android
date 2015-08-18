@@ -7,9 +7,5 @@ public @interface Action {
 
     String name();
 
-    String[] args1() default {};
-
-    Class[] argv1() default {};
-
     ActionParameter[] args() default {};
 }
