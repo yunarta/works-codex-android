@@ -8,6 +8,7 @@ import com.mobilesolutionworks.codex.Property;
 import com.mobilesolutionworks.codex.PropertySubscriber;
 import com.mobilesolutionworks.codex.internal.doclet.ActionDoclet;
 import com.mobilesolutionworks.codex.internal.doclet.ActionHookDoclet;
+import com.mobilesolutionworks.codex.internal.doclet.ActionParamDoclet;
 import com.mobilesolutionworks.codex.internal.doclet.EmitterDoclet;
 import com.mobilesolutionworks.codex.internal.doclet.PropertyDoclet;
 import com.mobilesolutionworks.codex.internal.doclet.PropertySubscriberDoclet;
@@ -37,8 +38,8 @@ import javax.tools.Diagnostic;
  */
 public class AnnotationProcessor extends AbstractProcessor {
 
-    Map<String, EmitterDoclet> mEmitterDocMap = new TreeMap<>();
-    Map<String, ReceiverDoclet> mReceiverMap = new TreeMap<>();
+    Map<String, EmitterDoclet>  mEmitterDocMap = new TreeMap<>();
+    Map<String, ReceiverDoclet> mReceiverMap   = new TreeMap<>();
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment env) {
@@ -164,6 +165,13 @@ public class AnnotationProcessor extends AbstractProcessor {
                 XMLBuilder2 actionTag = iterator.e("action");
                 actionTag.a("name", doclet.action);
                 actionTag.a("signature", doclet.signature());
+
+                XMLBuilder2 signatureTag = actionTag.e("signature");
+                for (ActionParamDoclet arg : doclet.args) {
+                    signatureTag.e("params").a("type", arg.type.toString());
+                }
+                signatureTag.up();
+
                 iterator = actionTag.up();
             }
 
@@ -180,6 +188,8 @@ public class AnnotationProcessor extends AbstractProcessor {
                 propertyTag.a("name", doclet.name);
                 propertyTag.a("type", doclet.type.toString());
                 propertyTag.a("method", doclet.method);
+
+                propertyTag.e("signature").a("method", doclet.method).a("return", doclet.type.toString()).up();
                 iterator = propertyTag.up();
             }
 
@@ -204,8 +214,14 @@ public class AnnotationProcessor extends AbstractProcessor {
                     XMLBuilder2 actionTag = iterator.e("actionHook");
                     actionTag.a("name", doclet.action);
                     actionTag.a("method", doclet.signature());
-                    iterator = actionTag.up();
 
+                    XMLBuilder2 signatureTag = actionTag.e("signature").a("method", doclet.method);
+                    for (ActionParamDoclet arg : doclet.args) {
+                        signatureTag.e("params").a("type", arg.type.toString());
+                    }
+                    signatureTag.up();
+
+                    iterator = actionTag.up();
                 }
 
                 List<ActionHookDoclet> list = allActionHooks.getOrDefault(key, new ArrayList<ActionHookDoclet>());
@@ -223,6 +239,11 @@ public class AnnotationProcessor extends AbstractProcessor {
                     XMLBuilder2 actionTag = iterator.e("propertySubscriber");
                     actionTag.a("name", doclet.name);
                     actionTag.a("method", doclet.signature());
+
+                    XMLBuilder2 signatureTag = actionTag.e("signature").a("method", doclet.method);
+                    signatureTag.e("params").a("type", doclet.arg.toString()).up();
+                    signatureTag.up();
+
                     iterator = actionTag.up();
                 }
 
