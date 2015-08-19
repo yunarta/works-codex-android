@@ -19,6 +19,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -46,12 +47,15 @@ public class AnnotationProcessor extends AbstractProcessor {
         if (env.processingOver()) return true;
 
         Map<String, String> options = processingEnv.getOptions();
+        System.out.println("apt options = " + options);
         String outputDir = options.get("codexOutput");
+
 
         if (annotations.isEmpty()) return true;
 
         PrintWriter writer = new PrintWriter(new OutputStreamWriter(System.out));
-        writer = createCodexWriter(outputDir, writer);
+        writer = createCodexWriter(outputDir, options.get("variant"), writer);
+
 
         Set<? extends Element> elements;
 
@@ -342,10 +346,22 @@ public class AnnotationProcessor extends AbstractProcessor {
         return true;
     }
 
-    private PrintWriter createCodexWriter(String outputDir, PrintWriter writer) {
+    private PrintWriter createCodexWriter(String output, String variant, PrintWriter writer) {
         try {
-            if (outputDir != null) {
-                writer = new PrintWriter(new FileOutputStream(new File(outputDir, "codex.xml")));
+            if (output != null) {
+                String root = System.getProperty("user.dir");
+                File file = new File(root);
+                URI rootUri = file.toURI();
+
+                File outputDir = new File(output);
+                URI outputUri = outputDir.toURI();
+
+                URI finalUri = rootUri.resolve(outputUri);
+
+                File parent = new File(finalUri.getPath());
+                parent.mkdirs();
+
+                writer = new PrintWriter(new FileOutputStream(new File(parent, "codex-" + variant + ".xml")));
             }
         } catch (FileNotFoundException e) {
             // e.printStackTrace();
@@ -369,6 +385,7 @@ public class AnnotationProcessor extends AbstractProcessor {
     public Set<String> getSupportedOptions() {
         HashSet<String> supportedOptions = new HashSet<>();
         supportedOptions.add("codexOutput");
+        supportedOptions.add("variant");
 
         return supportedOptions;
     }
