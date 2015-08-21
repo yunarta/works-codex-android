@@ -1,4 +1,6 @@
 apply plugin: 'com.android.library'
+apply plugin: 'com.jfrog.bintray'
+apply plugin: 'com.github.dcendents.android-maven'
 
 android {
     compileSdkVersion 22
@@ -8,7 +10,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 22
         versionCode 1
-        versionName "1.0"
+        versionName version
     }
 
     buildTypes {
@@ -24,8 +26,29 @@ android {
     }
 }
 
+group 'com.mobilesolutionworks'
+version '1.0.0'
+
+apply from: 'https://raw.githubusercontent.com/yunarta/works_gradle_script/master/publish_works.gradle'
+worksPublish {
+    bintray {
+        repo = 'snapshot'
+        name = group + ':' + project.name
+    }
+
+    developer {
+        id = 'yunarta'
+        name = 'Yunarta Kartawahyudi'
+        email = 'yunarta.kartawahyudi@gmail.com'
+    }
+
+    siteUrl = 'https://github.com/yunarta/works-codex-android'
+    gitUrl = 'https://github.com/yunarta/works-codex-android.git'
+}
+
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:support-annotations:22.2.1'
     compile project(':codex-annotations')
 }
+
+apply from: 'https://raw.githubusercontent.com/yunarta/works_gradle_script/master/publish_bintray_for_android_lib.gradle'

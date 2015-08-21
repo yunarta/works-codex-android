@@ -1,7 +1,5 @@
 package com.mobilesolutionworks.codex;
 
-import android.support.annotation.NonNull;
-
 import java.lang.reflect.InvocationTargetException;
 
 /**
@@ -59,7 +57,7 @@ class ActionHookHandler implements Comparable<ActionHookHandler> {
     }
 
     @Override
-    public int compareTo(@NonNull ActionHookHandler another) {
+    public int compareTo(ActionHookHandler another) {
         return info.compareTo(another.info);
     }
 }

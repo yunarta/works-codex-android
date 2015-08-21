@@ -7,15 +7,14 @@ import java.lang.annotation.Target;
 
 /**
  * An action hook.
- * <p/>
+ * <p>
  * Which is basically no contract event listener, which hook to action dispatched in the system.
- * <p/>
+ * <p>
  * Created by yunarta on 9/8/15.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface ActionHook
-{
+public @interface ActionHook {
     String name();
 
     int priority() default Integer.MAX_VALUE;

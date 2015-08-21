@@ -1,7 +1,5 @@
 package com.mobilesolutionworks.codex;
 
-import android.support.annotation.NonNull;
-
 import java.lang.reflect.InvocationTargetException;
 
 /**
@@ -53,7 +51,7 @@ class PropertySubscriberHandler implements Comparable<PropertySubscriberHandler>
     }
 
     @Override
-    public int compareTo(@NonNull PropertySubscriberHandler another) {
+    public int compareTo(PropertySubscriberHandler another) {
         return info.compareTo(another.info);
     }
 }

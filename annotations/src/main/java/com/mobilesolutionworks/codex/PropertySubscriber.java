@@ -7,12 +7,11 @@ import java.lang.annotation.Target;
 
 /**
  * An prroperty hook for receiving property change event.
- * <p/>
+ * <p>
  * Created by yunarta on 9/8/15.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface PropertySubscriber
-{
+public @interface PropertySubscriber {
     String name();
 }

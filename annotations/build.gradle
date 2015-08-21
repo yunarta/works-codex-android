@@ -1,7 +1,30 @@
 apply plugin: 'java'
 
+group 'com.mobilesolutionworks'
+version '1.0.0'
+
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
+apply from: 'https://raw.githubusercontent.com/yunarta/works_gradle_script/master/publish_works.gradle'
+worksPublish {
+    bintray {
+        repo = 'snapshot'
+        name = group + ':' + project.name
+    }
+
+    developer {
+        id = 'yunarta'
+        name = 'Yunarta Kartawahyudi'
+        email = 'yunarta.kartawahyudi@gmail.com'
+    }
+
+    siteUrl = 'https://github.com/yunarta/works-codex-android'
+    gitUrl = 'https://github.com/yunarta/works-codex-android.git'
+
+}
+
 dependencies {
 }
+
+apply from: 'https://raw.githubusercontent.com/yunarta/works_gradle_script/master/publish_bintray_for_java_lib.gradle'
