@@ -1,6 +1,4 @@
 apply plugin: 'com.android.library'
-apply plugin: 'com.jfrog.bintray'
-apply plugin: 'com.github.dcendents.android-maven'
 
 android {
     compileSdkVersion 22
@@ -29,7 +27,7 @@ android {
 group 'com.mobilesolutionworks'
 version '1.0.0'
 
-apply from: 'https://raw.githubusercontent.com/yunarta/works_gradle_script/master/publish_works.gradle'
+apply from: 'https://raw.githubusercontent.com/yunarta/works-gradle-script/master/publish-works.gradle'
 worksPublish {
     bintray {
         repo = 'snapshot'
@@ -51,4 +49,4 @@ dependencies {
     compile project(':codex-annotations')
 }
 
-apply from: 'https://raw.githubusercontent.com/yunarta/works_gradle_script/master/publish_bintray_for_android_lib.gradle'
+apply from: 'https://raw.githubusercontent.com/yunarta/works-gradle-script/master/publish-bintray-for-android-lib.gradle'

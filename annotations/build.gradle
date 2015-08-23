@@ -6,7 +6,8 @@ version '1.0.0'
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
-apply from: 'https://raw.githubusercontent.com/yunarta/works_gradle_script/master/publish_works.gradle'
+apply from: 'https://raw.githubusercontent.com/yunarta/works-gradle-script/master/publish-works.gradle'
+
 worksPublish {
     bintray {
         repo = 'snapshot'
@@ -27,4 +28,4 @@ worksPublish {
 dependencies {
 }
 
-apply from: 'https://raw.githubusercontent.com/yunarta/works_gradle_script/master/publish_bintray_for_java_lib.gradle'
+apply from: 'https://raw.githubusercontent.com/yunarta/works-gradle-script/master/publish-bintray-for-java-lib.gradle'
