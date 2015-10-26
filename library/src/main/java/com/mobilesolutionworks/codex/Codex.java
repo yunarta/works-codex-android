@@ -157,7 +157,7 @@ public class Codex {
         int key = (name + args.length).hashCode();
 
         if (Looper.myLooper() != mHandler.getLooper()) {
-            mHandler.obtainMessage(START_ACTION, key, 0, args);
+            mHandler.obtainMessage(START_ACTION, key, 0, args).sendToTarget();
         } else {
             dispatchStartAction(key, args);
         }
@@ -169,7 +169,7 @@ public class Codex {
         int key = (name + args.length).hashCode();
 
         if (Looper.myLooper() != mHandler.getLooper()) {
-            mHandler.obtainMessage(START_ACTION, key, 0, args);
+            mHandler.obtainMessage(START_ACTION, key, 0, args).sendToTarget();
         } else {
             dispatchStartAction(key, args);
         }
@@ -182,7 +182,7 @@ public class Codex {
         int key = name.hashCode();
 
         if (Looper.myLooper() != mHandler.getLooper()) {
-            mHandler.obtainMessage(UPDATE_PROPERTY, key, 0, owner);
+            mHandler.obtainMessage(UPDATE_PROPERTY, key, 0, owner).sendToTarget();
         } else {
             dispatchUpdateProperty(owner, key);
         }

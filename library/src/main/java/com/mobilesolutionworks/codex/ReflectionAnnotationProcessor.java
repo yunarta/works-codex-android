@@ -94,13 +94,17 @@ public class ReflectionAnnotationProcessor {
     }
 
     public static void process(Class<?> cl) {
+        process(cl, cl);
+    }
+
+    public static void process(Class<?> register, Class<?> cl) {
         Class<?> examined = cl;
 
-        do {
-            SparseArray<List<MethodInfo>> classActionHookMethods = new SparseArray<>();
-            SparseArray<List<MethodInfo>> classPropertySubscriberMethods = new SparseArray<>();
-            SparseArray<MethodInfo> classDefaultPropertyMethods = new SparseArray<>();
+        SparseArray<List<MethodInfo>> classActionHookMethods = new SparseArray<>();
+        SparseArray<List<MethodInfo>> classPropertySubscriberMethods = new SparseArray<>();
+        SparseArray<MethodInfo> classDefaultPropertyMethods = new SparseArray<>();
 
+        do {
             for (Method method : examined.getDeclaredMethods()) {
                 if (method.isBridge()) {
                     // The compiler sometimes creates synthetic bridge methods as part of the
@@ -176,17 +180,53 @@ public class ReflectionAnnotationProcessor {
                 }
             }
 
-            allActionHooks.put(examined.hashCode(), classActionHookMethods);
-            allPropertySubscribers.put(examined.hashCode(), classPropertySubscriberMethods);
-            allDefaultProperties.put(examined.hashCode(), classDefaultPropertyMethods);
-
             if (examined.isAnnotationPresent(InheritCodex.class)) {
+                final Class<?>[] interfaces = examined.getInterfaces();
+                for (Class<?> i :interfaces) {
+                    process(register, i);
+                }
+
                 examined = examined.getSuperclass();
             } else {
                 examined = null;
             }
         }
         while (examined != null);
+
+        SparseArray<List<MethodInfo>> array;
+
+        array = allActionHooks.get(register.hashCode());
+        if (array == null) array = new SparseArray<>();
+
+        int size = classActionHookMethods.size();
+        for (int i = 0; i < size; i++)
+        {
+            array.append(classActionHookMethods.keyAt(i), classActionHookMethods.valueAt(i));
+        }
+
+        allActionHooks.put(register.hashCode(), array);
+
+        array = allPropertySubscribers.get(register.hashCode());
+        if (array == null) array = new SparseArray<>();
+
+        size = classPropertySubscriberMethods.size();
+        for (int i = 0; i < size; i++)
+        {
+            array.append(classPropertySubscriberMethods.keyAt(i), classPropertySubscriberMethods.valueAt(i));
+        }
+
+        allPropertySubscribers.put(register.hashCode(), array);
+
+        SparseArray<MethodInfo> array2 = allDefaultProperties.get(register.hashCode());
+        if (array2 == null) array2 = new SparseArray<>();
+
+        size = classDefaultPropertyMethods.size();
+        for (int i = 0; i < size; i++)
+        {
+            array2.append(classDefaultPropertyMethods.keyAt(i), classDefaultPropertyMethods.valueAt(i));
+        }
+
+        allDefaultProperties.put(register.hashCode(), array2);
     }
 
     public static SparseArray<List<ActionHookHandler>> findActionHooks(Object object) {
