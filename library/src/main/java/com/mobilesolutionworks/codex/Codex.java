@@ -88,6 +88,8 @@ public class Codex {
 
                 List<PropertySubscriberHandler> registeredHandlers = allSubscribers.get(key, new ArrayList<PropertySubscriberHandler>());
                 registeredHandlers.addAll(handlers);
+
+                allSubscribers.put(key, registeredHandlers);
             }
         }
 
