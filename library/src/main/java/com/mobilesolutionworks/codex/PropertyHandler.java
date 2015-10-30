@@ -1,20 +1,23 @@
 package com.mobilesolutionworks.codex;
 
+import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 
 /**
  * Created by yunarta on 17/8/15.
  */
-class PropertyHandler {
+class PropertyHandler
+{
 
-    Object target;
+    WeakReference<Object> target;
 
     private ReflectionAnnotationProcessor.MethodInfo info;
 
     private final int hashCode;
 
-    PropertyHandler(Object target, ReflectionAnnotationProcessor.MethodInfo info) {
-        this.target = target;
+    PropertyHandler(Object target, ReflectionAnnotationProcessor.MethodInfo info)
+    {
+        this.target = new WeakReference<>(target);
         this.info = info;
 
         int result = target.hashCode();
@@ -23,13 +26,25 @@ class PropertyHandler {
         this.hashCode = result;
     }
 
-    Object getProperty() throws InvocationTargetException {
-        try {
-            return info.method.invoke(target);
-        } catch (IllegalAccessException e) {
+    public boolean isReachable()
+    {
+        return target.get() != null;
+    }
+
+    Object getProperty() throws InvocationTargetException
+    {
+        try
+        {
+            return info.method.invoke(target.get());
+        }
+        catch (IllegalAccessException e)
+        {
             throw new AssertionError(e);
-        } catch (InvocationTargetException e) {
-            if (e.getCause() instanceof Error) {
+        }
+        catch (InvocationTargetException e)
+        {
+            if (e.getCause() instanceof Error)
+            {
                 throw (Error) e.getCause();
             }
 
@@ -38,17 +53,19 @@ class PropertyHandler {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(Object o)
+    {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
         PropertyHandler handler = (PropertyHandler) o;
-        return target.equals(handler.target) && info.equals(handler.info);
+        return target.get() != null && target.get().equals(handler.target.get()) && info.equals(handler.info);
 
     }
 
     @Override
-    public int hashCode() {
+    public int hashCode()
+    {
         return hashCode;
     }
 }

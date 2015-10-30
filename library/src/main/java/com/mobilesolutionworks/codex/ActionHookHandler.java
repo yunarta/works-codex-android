@@ -1,20 +1,23 @@
 package com.mobilesolutionworks.codex;
 
+import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 
 /**
  * Created by yunarta on 12/8/15.
  */
-class ActionHookHandler implements Comparable<ActionHookHandler> {
+class ActionHookHandler implements Comparable<ActionHookHandler>
+{
 
-    private final Object target;
+    private final WeakReference<Object> target;
 
     private final ReflectionAnnotationProcessor.MethodInfo info;
 
     private final int hashCode;
 
-    ActionHookHandler(Object target, ReflectionAnnotationProcessor.MethodInfo info) {
-        this.target = target;
+    ActionHookHandler(Object target, ReflectionAnnotationProcessor.MethodInfo info)
+    {
+        this.target = new WeakReference<>(target);
         this.info = info;
 
         int result = target.hashCode();
@@ -22,19 +25,34 @@ class ActionHookHandler implements Comparable<ActionHookHandler> {
         hashCode = result;
     }
 
-    int actionHook(Object... args) throws InvocationTargetException {
-        try {
-            if (info.noModifier) {
-                info.method.invoke(target, args);
+    public boolean isReachable()
+    {
+        return target.get() != null;
+    }
+
+    int actionHook(Object... args) throws InvocationTargetException
+    {
+        try
+        {
+            if (info.noModifier)
+            {
+                info.method.invoke(target.get(), args);
                 return 0;
-            } else {
-                return (int) info.method.invoke(target, args);
+            }
+            else
+            {
+                return (int) info.method.invoke(target.get(), args);
             }
 
-        } catch (IllegalAccessException e) {
+        }
+        catch (IllegalAccessException e)
+        {
             throw new AssertionError(e);
-        } catch (InvocationTargetException e) {
-            if (e.getCause() instanceof Error) {
+        }
+        catch (InvocationTargetException e)
+        {
+            if (e.getCause() instanceof Error)
+            {
                 throw (Error) e.getCause();
             }
 
@@ -43,21 +61,24 @@ class ActionHookHandler implements Comparable<ActionHookHandler> {
     }
 
     @Override
-    public int hashCode() {
+    public int hashCode()
+    {
         return hashCode;
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(Object o)
+    {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
         ActionHookHandler handler = (ActionHookHandler) o;
-        return target.equals(handler.target) && info.equals(handler.info);
+        return target.get() != null && target.get().equals(handler.target.get()) && info.equals(handler.info);
     }
 
     @Override
-    public int compareTo(ActionHookHandler another) {
+    public int compareTo(ActionHookHandler another)
+    {
         return info.compareTo(another.info);
     }
 }
