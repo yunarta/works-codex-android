@@ -3,6 +3,7 @@ package com.mobilesolutionworks.codex;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.util.Log;
 import android.util.SparseArray;
 
 import java.lang.ref.WeakReference;
@@ -23,8 +24,8 @@ public class Codex {
     SparseArray<List<PropertySubscriberHandler>> allSubscribers = new SparseArray<>();
     SparseArray<PropertyHandler>                 allProperties  = new SparseArray<>();
 
-    WeakReference<PropertySubscriberHandler[]> _subscriberHandlers;
-    WeakReference<ActionHookHandler[]>         _actionHandlers;
+    WeakReference<ArrayList<PropertySubscriberHandler>> _subscriberHandlers;
+    WeakReference<ArrayList<ActionHookHandler>>         _actionHandlers;
 
     final Handler mHandler;
 
@@ -158,11 +159,11 @@ public class Codex {
     public void startActionEnforced(Object object, String name, Object... args) {
         int key = (name + args.length).hashCode();
 
-        if (Looper.myLooper() != mHandler.getLooper()) {
-            mHandler.obtainMessage(START_ACTION, key, 0, args).sendToTarget();
-        } else {
-            dispatchStartAction(key, args);
-        }
+        mHandler.obtainMessage(START_ACTION, key, 0, args).sendToTarget();
+//        if (Looper.myLooper() != mHandler.getLooper()) {
+//        } else {
+//            dispatchStartAction(key, args);
+//        }
     }
     /**
      * Publish an action to the system and allow the hook to pick it up.
@@ -170,11 +171,11 @@ public class Codex {
     public void startAction(String name, Object... args) {
         int key = (name + args.length).hashCode();
 
-        if (Looper.myLooper() != mHandler.getLooper()) {
-            mHandler.obtainMessage(START_ACTION, key, 0, args).sendToTarget();
-        } else {
-            dispatchStartAction(key, args);
-        }
+        mHandler.obtainMessage(START_ACTION, key, 0, args).sendToTarget();
+//        if (Looper.myLooper() != mHandler.getLooper()) {
+//        } else {
+//            dispatchStartAction(key, args);
+//        }
     }
 
     /**
@@ -183,25 +184,32 @@ public class Codex {
     public void updateProperty(Object owner, String name) {
         int key = name.hashCode();
 
-        if (Looper.myLooper() != mHandler.getLooper()) {
-            mHandler.obtainMessage(UPDATE_PROPERTY, key, 0, owner).sendToTarget();
-        } else {
-            dispatchUpdateProperty(owner, key);
-        }
+        mHandler.obtainMessage(UPDATE_PROPERTY, key, 0, owner).sendToTarget();
+//        if (Looper.myLooper() != mHandler.getLooper()) {
+//        } else {
+//            dispatchUpdateProperty(owner, key);
+//        }
     }
 
     private void dispatchPropertyToSubscribers(Object value, List<PropertySubscriberHandler> handlers) {
         if (handlers == null || handlers.isEmpty()) return;
 
         if (_subscriberHandlers == null || _subscriberHandlers.get() == null) {
-            _subscriberHandlers = new WeakReference<>(new PropertySubscriberHandler[handlers.size()]);
+            _subscriberHandlers = new WeakReference<>(new ArrayList<PropertySubscriberHandler>());
         }
 
-        for (PropertySubscriberHandler handler : handlers.toArray(_subscriberHandlers.get())) {
+        ArrayList<PropertySubscriberHandler> list = _subscriberHandlers.get();
+        list.clear();
+        list.addAll(handlers);
+
+        for (PropertySubscriberHandler handler : list) {
             try {
                 handler.receiveProperty(value);
             } catch (InvocationTargetException e) {
                 throw new RuntimeException("Could not dispatch property " + value + " to " + handler, e);
+            } catch (NullPointerException e) {
+                Log.d("[vcx]", "value = " + value);
+                throw e;
             }
         }
     }
@@ -231,10 +239,14 @@ public class Codex {
         if (handlers == null) return;
 
         if (_actionHandlers == null || _actionHandlers.get() == null) {
-            _actionHandlers = new WeakReference<>(new ActionHookHandler[handlers.size()]);
+            _actionHandlers = new WeakReference<>(new ArrayList<ActionHookHandler>());
         }
 
-        for (ActionHookHandler handler : handlers.toArray(_actionHandlers.get())) {
+        ArrayList<ActionHookHandler> list = _actionHandlers.get();
+        list.clear();
+        list.addAll(handlers);
+
+        for (ActionHookHandler handler : list) {
             try {
                 handler.actionHook(args);
             } catch (InvocationTargetException e) {
