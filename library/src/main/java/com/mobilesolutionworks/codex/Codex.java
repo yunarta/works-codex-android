@@ -28,6 +28,9 @@ public class Codex
     WeakReference<ArrayList<ActionHookHandler>>         _actionHandlers;
 
     final Handler mHandler;
+    final List<Object> mObjects;
+
+    boolean mUseWeakReference;
 
     public Codex()
     {
@@ -42,10 +45,17 @@ public class Codex
     public Codex(Looper looper)
     {
         mHandler = new Handler(looper, new CallbackImpl());
+        mObjects = new ArrayList<>();
+    }
+
+    public void weakenReference() {
+        mUseWeakReference = true;
     }
 
     public void register(Object object)
     {
+        if (!mUseWeakReference) mObjects.add(object);
+
         SparseArray<List<ActionHookHandler>> hooks = ReflectionAnnotationProcessor.findActionHooks(object);
 
         // register all hooks
@@ -133,6 +143,8 @@ public class Codex
 
     public void unregister(Object object)
     {
+        if (!mUseWeakReference) mObjects.remove(object);
+
         SparseArray<List<ActionHookHandler>> hooks  = ReflectionAnnotationProcessor.findActionHooks(object);
         int                                  length = hooks.size();
         if (length != 0)
