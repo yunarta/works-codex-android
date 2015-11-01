@@ -27,7 +27,7 @@ public class PropertySubscriberDoclet implements Comparable<PropertySubscriberDo
 
     public PropertySubscriberDoclet(String className, PropertySubscriber annotation, Element element) {
         this.className = className;
-        this.name = annotation.name();
+        this.name = annotation.value();
 
         ExecutableElement executable = (ExecutableElement) element;
         this.method = executable.getSimpleName().toString();

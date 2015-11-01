@@ -43,18 +43,18 @@ public class ReflectionAnnotationProcessor
 
         public MethodInfo(ActionHook annotation, Method method)
         {
-            this(annotation.name().hashCode(), annotation.priority(), false, method);
+            this(annotation.value().hashCode(), annotation.priority(), false, method);
         }
 
 
         public MethodInfo(PropertySubscriber annotation, Method method)
         {
-            this(annotation.name().hashCode(), 0, false, method);
+            this(annotation.value().hashCode(), 0, false, method);
         }
 
         public MethodInfo(Property annotation, Method method)
         {
-            this(annotation.name().hashCode(), 0, annotation.cached(), method);
+            this(annotation.value().hashCode(), 0, annotation.cached(), method);
         }
 
         private MethodInfo(int name, int priority, boolean cached, Method method)
@@ -144,7 +144,7 @@ public class ReflectionAnnotationProcessor
 
                     Class<?>[] params = method.getParameterTypes();
 
-                    int name = (hook.name() + params.length).hashCode();
+                    int name = (hook.value() + params.length).hashCode();
                     List<MethodInfo> methods = classActionHookMethods.get(name);
                     if (methods == null)
                     {
@@ -167,7 +167,7 @@ public class ReflectionAnnotationProcessor
                         );
                     }
 
-                    int name = subscriber.name().hashCode();
+                    int name = subscriber.value().hashCode();
                     List<MethodInfo> methods = classPropertySubscriberMethods.get(name);
                     if (methods == null)
                     {
@@ -192,13 +192,13 @@ public class ReflectionAnnotationProcessor
                         );
                     }
 
-                    int name = property.name().hashCode();
+                    int name = property.value().hashCode();
                     MethodInfo methodInfo = classDefaultPropertyMethods.get(name);
                     if (methodInfo != null)
                     {
                         throw new IllegalArgumentException(
                                 String.format(Locale.ENGLISH,
-                                        "Method %s has already been registered", property.name())
+                                        "Method %s has already been registered", property.value())
                         );
                     }
 

@@ -12,6 +12,7 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface PropertySubscriber {
-    String name();
+public @interface PropertySubscriber
+{
+    String value();
 }

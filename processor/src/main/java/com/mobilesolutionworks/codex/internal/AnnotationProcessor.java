@@ -68,7 +68,7 @@ public class AnnotationProcessor extends AbstractProcessor {
             mEmitterDocMap.put(className, emitter);
 
             ActionProvider annotation = element.getAnnotation(ActionProvider.class);
-            Action[] actionInfos = annotation.actions();
+            Action[] actionInfos = annotation.value();
             for (Action action : actionInfos) {
                 ActionDoclet doclet = new ActionDoclet(className, action);
 

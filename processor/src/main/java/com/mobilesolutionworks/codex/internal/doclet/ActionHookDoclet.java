@@ -27,7 +27,7 @@ public class ActionHookDoclet implements Comparable<ActionHookDoclet> {
 
     public ActionHookDoclet(String className, ActionHook annotation, Element element) {
         this.className = className;
-        this.action = annotation.name();
+        this.action = annotation.value();
         this.priority = annotation.priority();
 
         ExecutableElement executable = (ExecutableElement) element;

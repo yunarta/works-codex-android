@@ -20,7 +20,7 @@ public class ActionDoclet {
 
     public ActionDoclet(String className, Action action) {
         this.className = className;
-        this.action = action.name();
+        this.action = action.value();
 
         this.args = new ArrayList<>();
         for (ActionParameter arg : action.args()) {

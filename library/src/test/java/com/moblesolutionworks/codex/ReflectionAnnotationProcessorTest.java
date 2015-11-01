@@ -12,7 +12,7 @@ public class ReflectionAnnotationProcessorTest extends TestCase
 {
     public static class TestActionHook
     {
-        @ActionHook(name = "action")
+        @ActionHook("action")
         public void actionHook(String name, int count)
         {
 
@@ -21,7 +21,7 @@ public class ReflectionAnnotationProcessorTest extends TestCase
 
     public static class TestActionHookB
     {
-        @ActionHook(name = "action")
+        @ActionHook("action")
         public void actionHook(String name, int count)
         {
 

@@ -5,7 +5,7 @@ package com.mobilesolutionworks.codex;
  */
 public @interface ActionParameter {
 
-    String name();
+    String value();
 
     Class type();
 }

@@ -15,7 +15,7 @@ public class ActionParamDoclet {
     public final TypeMirror type;
 
     public ActionParamDoclet(ActionParameter annotation) {
-        this.name = annotation.name();
+        this.name = annotation.value();
         this.type = getTypeFromActionParameter(annotation);
     }
 

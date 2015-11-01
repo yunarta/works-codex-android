@@ -12,7 +12,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 public @interface Property
 {
-    String name();
+    String value();
 
     boolean cached() default false;
 }

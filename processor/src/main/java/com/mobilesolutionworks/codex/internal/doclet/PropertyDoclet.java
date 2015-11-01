@@ -21,7 +21,7 @@ public class PropertyDoclet {
 
     public PropertyDoclet(String className, Property annotation, Element element) {
         this.className = className;
-        this.name = annotation.name();
+        this.name = annotation.value();
 
         ExecutableElement executable = (ExecutableElement) element;
         this.method = executable.getSimpleName().toString();

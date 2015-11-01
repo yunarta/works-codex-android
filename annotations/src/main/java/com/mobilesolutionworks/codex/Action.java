@@ -5,7 +5,7 @@ package com.mobilesolutionworks.codex;
  */
 public @interface Action {
 
-    String name();
+    String value();
 
     ActionParameter[] args() default {};
 }

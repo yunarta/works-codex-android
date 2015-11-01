@@ -14,8 +14,9 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface ActionHook {
-    String name();
+public @interface ActionHook
+{
+    String value();
 
     int priority() default Integer.MAX_VALUE;
 }
