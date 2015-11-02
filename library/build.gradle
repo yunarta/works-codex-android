@@ -1,12 +1,14 @@
 apply plugin: 'com.android.library'
 
+apply from: ('https://raw.githubusercontent.com/yunarta/works-gradle-script/master/auto-configure.gradle')
+
 android {
-    compileSdkVersion 22
-    buildToolsVersion "22.0.1"
+    compileSdkVersion autoCompileSdkVersion(23)
+    buildToolsVersion autoBuildToolsVersion('23.0.1')
 
     defaultConfig {
         minSdkVersion 16
-        targetSdkVersion 22
+        targetSdkVersion autoCompileSdkVersion(22)
         versionCode 1
         versionName version
     }
