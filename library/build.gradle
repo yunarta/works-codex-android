@@ -7,7 +7,7 @@ android {
     buildToolsVersion autoBuildToolsVersion('23.0.1')
 
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion 14
         targetSdkVersion autoCompileSdkVersion(22)
         versionCode 1
         versionName version
@@ -27,7 +27,7 @@ android {
 }
 
 group 'com.mobilesolutionworks'
-version '1.0.0'
+version '1.1.0'
 
 apply from: 'https://raw.githubusercontent.com/yunarta/works-gradle-script/master/publish-works.gradle'
 worksPublish {

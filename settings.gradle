@@ -1,3 +1,6 @@
+include ':simple-usage'
+project(':simple-usage').projectDir = new File('sample/simple-usage')
+
 include ':codex'
 project(':codex').projectDir = new File('library')
 
