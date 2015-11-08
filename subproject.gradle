@@ -1,4 +1,4 @@
-apply from: 'settings.gradle'
+apply from: 'subsettings.gradle'
 
 rootProject.children.each { project ->
     String projectPath = project.projectDir.path.replace(settingsDir.path, "")

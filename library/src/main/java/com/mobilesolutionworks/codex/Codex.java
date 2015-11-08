@@ -27,7 +27,7 @@ public class Codex
     WeakReference<ArrayList<PropertySubscriberHandler>> _subscriberHandlers;
     WeakReference<ArrayList<ActionHookHandler>>         _actionHandlers;
 
-    final Handler mHandler;
+    final Handler      mHandler;
     final List<Object> mObjects;
 
     boolean mUseWeakReference;
@@ -48,7 +48,8 @@ public class Codex
         mObjects = new ArrayList<>();
     }
 
-    public void weakenReference() {
+    public void weakenReference()
+    {
         mUseWeakReference = true;
     }
 
@@ -147,6 +148,7 @@ public class Codex
 
         SparseArray<List<ActionHookHandler>> hooks  = ReflectionAnnotationProcessor.findActionHooks(object);
         int                                  length = hooks.size();
+
         if (length != 0)
         {
             for (int i = 0; i < length; i++)
@@ -177,7 +179,7 @@ public class Codex
         }
 
         SparseArray<List<PropertySubscriberHandler>> subscribers = ReflectionAnnotationProcessor.findPropertySubscribers(object);
-        length = hooks.size();
+        length = subscribers.size();
         if (length != 0)
         {
             for (int i = 0; i < length; i++)
@@ -185,7 +187,7 @@ public class Codex
                 int key = subscribers.keyAt(i);
                 List<PropertySubscriberHandler> handlers = subscribers.valueAt(i);
 
-                List<PropertySubscriberHandler> registeredSubscribers = allSubscribers.valueAt(key);
+                List<PropertySubscriberHandler> registeredSubscribers = allSubscribers.get(key);
                 registeredSubscribers.removeAll(handlers);
             }
         }
@@ -251,7 +253,7 @@ public class Codex
         }
         handlers.retainAll(list);
 
-        for (PropertySubscriberHandler handler : list)
+        for (PropertySubscriberHandler handler : new ArrayList<>(list))
         {
             try
             {
@@ -283,7 +285,7 @@ public class Codex
         }
         handlers.retainAll(list);
 
-        for (ActionHookHandler handler : list)
+        for (ActionHookHandler handler : new ArrayList<>(list))
         {
             try
             {
