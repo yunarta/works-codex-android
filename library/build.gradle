@@ -6,6 +6,8 @@ android {
     compileSdkVersion autoCompileSdkVersion(23)
     buildToolsVersion autoBuildToolsVersion('23.0.1')
 
+    defaultPublishConfig "debug"
+
     defaultConfig {
         minSdkVersion 14
         targetSdkVersion autoCompileSdkVersion(22)
@@ -14,6 +16,10 @@ android {
     }
 
     buildTypes {
+        debug {
+
+        }
+
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
