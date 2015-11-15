@@ -9,9 +9,9 @@ import java.lang.reflect.InvocationTargetException;
 class ActionHookHandler implements Comparable<ActionHookHandler>
 {
 
-    private final WeakReference<Object> target;
+    final WeakReference<Object> target;
 
-    private final ReflectionAnnotationProcessor.MethodInfo info;
+    final ReflectionAnnotationProcessor.MethodInfo info;
 
     private final int hashCode;
 

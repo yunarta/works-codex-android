@@ -10,12 +10,14 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Created by yunarta on 9/8/15.
  */
 public class Codex
 {
+    protected static final Logger LOGGER = Logger.getLogger(Codex.class.getName());
 
     private static final int START_ACTION    = 1;
     private static final int UPDATE_PROPERTY = 2;
@@ -68,8 +70,15 @@ public class Codex
 
             List<ActionHookHandler> handlers = hooks.valueAt(i);
 
+//            for (ActionHookHandler  handle : handlers)
+//            {
+//                LOGGER.fine(object + " key = " + key + " " + handle.info.method.getName() + " argc " + handle.info.argc);
+//            }
+
             registeredHooks.addAll(handlers);
             Collections.sort(registeredHooks);
+
+
 
             allHooks.put(key, registeredHooks);
         }
@@ -271,7 +280,11 @@ public class Codex
 
     private void dispatchStartAction(int key, Object[] args)
     {
+//        LOGGER.fine("key = " + key + " argc " + args.length);
+
         List<ActionHookHandler> handlers = allHooks.get(key);
+//        LOGGER.fine("handler = " + handlers);
+
         if (handlers == null) return;
 
         if (_actionHandlers == null || _actionHandlers.get() == null)
@@ -288,10 +301,12 @@ public class Codex
         }
         handlers.retainAll(list);
 
+//        LOGGER.fine("list = " + list);
         for (ActionHookHandler handler : new ArrayList<>(list))
         {
             try
             {
+//                LOGGER.fine("target = " + handler.target.get() + " " + handler.info.method.getName());
                 handler.actionHook(args);
             }
             catch (InvocationTargetException e)
