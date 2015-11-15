@@ -188,7 +188,10 @@ public class Codex
                 List<PropertySubscriberHandler> handlers = subscribers.valueAt(i);
 
                 List<PropertySubscriberHandler> registeredSubscribers = allSubscribers.get(key);
-                registeredSubscribers.removeAll(handlers);
+                if (registeredSubscribers != null)
+                {
+                    registeredSubscribers.removeAll(handlers);
+                }
             }
         }
     }
