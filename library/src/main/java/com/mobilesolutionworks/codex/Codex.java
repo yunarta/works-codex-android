@@ -3,6 +3,7 @@ package com.mobilesolutionworks.codex;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.util.Log;
 import android.util.SparseArray;
 
 import java.lang.ref.WeakReference;
@@ -34,6 +35,8 @@ public class Codex
 
     boolean mUseWeakReference;
 
+    SparseArray<String> mActions;
+
     public Codex()
     {
         this(Looper.getMainLooper());
@@ -48,6 +51,7 @@ public class Codex
     {
         mHandler = new Handler(looper, new CallbackImpl());
         mObjects = new ArrayList<>();
+        mActions = new SparseArray<>();
     }
 
     public void weakenReference()
@@ -224,6 +228,7 @@ public class Codex
     public void startAction(String name, Object... args)
     {
         int key = (name + args.length).hashCode();
+        mActions.put(key, name);
 
         mHandler.obtainMessage(START_ACTION, key, 0, args).sendToTarget();
 //        if (Looper.myLooper() != mHandler.getLooper()) {
@@ -279,12 +284,14 @@ public class Codex
 
     private void dispatchStartAction(int key, Object[] args)
     {
-//        LOGGER.fine("key = " + key + " argc " + args.length);
-
         List<ActionHookHandler> handlers = allHooks.get(key);
-//        LOGGER.fine("handler = " + handlers);
 
-        if (handlers == null) return;
+        if (handlers == null)
+        {
+            String action = mActions.get(key);
+            Log.w("Codex", "no action for [" + action + "] found in this Codex");
+            return;
+        }
 
         if (_actionHandlers == null || _actionHandlers.get() == null)
         {
