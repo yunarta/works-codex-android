@@ -65,7 +65,7 @@ public class Codex
         int length = hooks.size();
         for (int i = 0; i < length; i++)
         {
-            int key = hooks.keyAt(i);
+            int                     key             = hooks.keyAt(i);
             List<ActionHookHandler> registeredHooks = allHooks.get(key, new ArrayList<ActionHookHandler>());
 
             List<ActionHookHandler> handlers = hooks.valueAt(i);
@@ -79,7 +79,6 @@ public class Codex
             Collections.sort(registeredHooks);
 
 
-
             allHooks.put(key, registeredHooks);
         }
 
@@ -91,7 +90,7 @@ public class Codex
 
             for (int i = 0; i < length; i++)
             {
-                int key = properties.keyAt(i);
+                int             key     = properties.keyAt(i);
                 PropertyHandler handler = properties.valueAt(i);
                 allProperties.put(key, handler);
 
@@ -116,7 +115,7 @@ public class Codex
 
             for (int i = 0; i < length; i++)
             {
-                int key = subscribers.keyAt(i);
+                int                             key      = subscribers.keyAt(i);
                 List<PropertySubscriberHandler> handlers = subscribers.valueAt(i);
 
                 List<PropertySubscriberHandler> registeredHandlers = allSubscribers.get(key, new ArrayList<PropertySubscriberHandler>());
@@ -131,7 +130,7 @@ public class Codex
         {
             for (int i = 0; i < length; i++)
             {
-                int key = subscribers.keyAt(i);
+                int                             key      = subscribers.keyAt(i);
                 List<PropertySubscriberHandler> handlers = subscribers.valueAt(i);
 
                 PropertyHandler propertyHandler = allProperties.get(key);
@@ -162,8 +161,8 @@ public class Codex
         {
             for (int i = 0; i < length; i++)
             {
-                int key = hooks.keyAt(i);
-                List<ActionHookHandler> handlers = hooks.valueAt(i);
+                int                     key             = hooks.keyAt(i);
+                List<ActionHookHandler> handlers        = hooks.valueAt(i);
                 List<ActionHookHandler> registeredHooks = allHooks.get(key);
 
                 registeredHooks.removeAll(handlers);
@@ -176,8 +175,8 @@ public class Codex
         {
             for (int i = 0; i < length; i++)
             {
-                int key = properties.keyAt(i);
-                PropertyHandler handler = properties.valueAt(i);
+                int             key               = properties.keyAt(i);
+                PropertyHandler handler           = properties.valueAt(i);
                 PropertyHandler registeredHandler = allProperties.get(key);
 
                 if (handler.equals(registeredHandler))
@@ -193,7 +192,7 @@ public class Codex
         {
             for (int i = 0; i < length; i++)
             {
-                int key = subscribers.keyAt(i);
+                int                             key      = subscribers.keyAt(i);
                 List<PropertySubscriberHandler> handlers = subscribers.valueAt(i);
 
                 List<PropertySubscriberHandler> registeredSubscribers = allSubscribers.get(key);
@@ -354,7 +353,7 @@ public class Codex
 
             if (propertyHandler.target.get() != owner)
             {
-                throw new IllegalStateException("only owner can dispatch this property change");
+                throw new IllegalStateException("only owner can dispatch this property " + propertyHandler.info.method.getName() + " change");
             }
 
             List<PropertySubscriberHandler> handlers = allSubscribers.get(key);
