@@ -4,7 +4,7 @@ apply from: ('https://raw.githubusercontent.com/yunarta/works-gradle-script/mast
 
 android {
     compileSdkVersion autoCompileSdkVersion(23)
-    buildToolsVersion autoBuildToolsVersion('23.0.1')
+    buildToolsVersion '23.0.2'
 
     defaultPublishConfig "debug"
 
@@ -57,4 +57,6 @@ dependencies {
     compile project(':codex-annotations')
 }
 
-apply from: 'https://raw.githubusercontent.com/yunarta/works-gradle-script/master/publish-bintray-for-android-lib.gradle'
+if (plugins.hasPlugin('com.jfrog.bintray')) {
+    apply from: 'https://raw.githubusercontent.com/yunarta/works-gradle-script/master/publish-bintray-for-android-lib.gradle'
+}

@@ -28,4 +28,6 @@ worksPublish {
 dependencies {
 }
 
-apply from: 'https://raw.githubusercontent.com/yunarta/works-gradle-script/master/publish-bintray-for-java-lib.gradle'
+if (plugins.hasPlugin('com.jfrog.bintray')) {
+    apply from: 'https://raw.githubusercontent.com/yunarta/works-gradle-script/master/publish-bintray-for-java-lib.gradle'
+}
