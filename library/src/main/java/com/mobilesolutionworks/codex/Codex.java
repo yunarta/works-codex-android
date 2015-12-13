@@ -169,7 +169,10 @@ public class Codex
                 List<ActionHookHandler> handlers        = hooks.valueAt(i);
                 List<ActionHookHandler> registeredHooks = allHooks.get(key);
 
-                registeredHooks.removeAll(handlers);
+                if (registeredHooks != null)
+                {
+                    registeredHooks.removeAll(handlers);
+                }
             }
         }
 
