@@ -11,7 +11,7 @@ targetCompatibility = 1.7
 worksPublish {
     bintray {
         repo = 'maven'
-        name = group + ':' + project.name
+        name = group + ':codex'
     }
 
     developer {
