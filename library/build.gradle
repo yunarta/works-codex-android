@@ -1,5 +1,10 @@
 apply plugin: 'com.android.library'
 apply plugin: 'com.mobilesolutionworks.android-autoconfig'
+apply plugin: 'com.mobilesolutionworks.jenkins-configure'
+apply plugin: 'com.mobilesolutionworks.bintray-publish'
+
+group 'com.mobilesolutionworks'
+version jenkins.version('1.2.0')
 
 android {
     compileSdkVersion autoConfig.sdk(23)
@@ -9,8 +14,9 @@ android {
 
     defaultConfig {
         minSdkVersion 14
-        targetSdkVersion autoConfig.sdk(22)
-        versionCode 1
+        targetSdkVersion autoConfig.sdk(23)
+
+        versionCode jenkins.build(1)
         versionName version
     }
 
@@ -31,13 +37,9 @@ android {
     }
 }
 
-group 'com.mobilesolutionworks'
-version '1.1.0'
-
-apply from: 'https://raw.githubusercontent.com/yunarta/works-gradle-script/master/publish-works.gradle'
 worksPublish {
     bintray {
-        repo = 'snapshot'
+        repo = 'maven'
         name = group + ':' + project.name
     }
 
@@ -54,8 +56,4 @@ worksPublish {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile project(':codex-annotations')
-}
-
-if (plugins.hasPlugin('com.jfrog.bintray')) {
-    apply from: 'https://raw.githubusercontent.com/yunarta/works-gradle-script/master/publish-bintray-for-android-lib.gradle'
 }
