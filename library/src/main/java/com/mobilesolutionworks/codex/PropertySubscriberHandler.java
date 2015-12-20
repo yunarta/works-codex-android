@@ -46,6 +46,10 @@ class PropertySubscriberHandler implements Comparable<PropertySubscriberHandler>
             {
                 throw (Error) e.getCause();
             }
+            else if (e.getCause() instanceof RuntimeException)
+            {
+                throw (RuntimeException) e.getCause();
+            }
 
             throw e;
         }
@@ -71,5 +75,13 @@ class PropertySubscriberHandler implements Comparable<PropertySubscriberHandler>
     public int compareTo(PropertySubscriberHandler another)
     {
         return info.compareTo(another.info);
+    }
+
+    @Override
+    public String toString()
+    {
+        return "PropertySubscriberHandler{" +
+                "target=" + target.get() +
+                '}';
     }
 }

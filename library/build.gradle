@@ -1,19 +1,24 @@
 apply plugin: 'com.android.library'
-
-apply from: ('https://raw.githubusercontent.com/yunarta/works-gradle-script/master/auto-configure.gradle')
+apply plugin: 'com.mobilesolutionworks.android-autoconfig'
 
 android {
-    compileSdkVersion autoCompileSdkVersion(23)
-    buildToolsVersion autoBuildToolsVersion('23.0.1')
+    compileSdkVersion autoConfig.sdk(23)
+    buildToolsVersion autoConfig.buildTools('23.0.2')
+
+    defaultPublishConfig "debug"
 
     defaultConfig {
         minSdkVersion 14
-        targetSdkVersion autoCompileSdkVersion(22)
+        targetSdkVersion autoConfig.sdk(22)
         versionCode 1
         versionName version
     }
 
     buildTypes {
+        debug {
+
+        }
+
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
@@ -51,4 +56,6 @@ dependencies {
     compile project(':codex-annotations')
 }
 
-apply from: 'https://raw.githubusercontent.com/yunarta/works-gradle-script/master/publish-bintray-for-android-lib.gradle'
+if (plugins.hasPlugin('com.jfrog.bintray')) {
+    apply from: 'https://raw.githubusercontent.com/yunarta/works-gradle-script/master/publish-bintray-for-android-lib.gradle'
+}

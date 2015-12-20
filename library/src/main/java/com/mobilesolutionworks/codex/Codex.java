@@ -3,6 +3,7 @@ package com.mobilesolutionworks.codex;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.util.Log;
 import android.util.SparseArray;
 
 import java.lang.ref.WeakReference;
@@ -10,12 +11,14 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Created by yunarta on 9/8/15.
  */
 public class Codex
 {
+    protected static final Logger LOGGER = Logger.getLogger(Codex.class.getName());
 
     private static final int START_ACTION    = 1;
     private static final int UPDATE_PROPERTY = 2;
@@ -27,10 +30,12 @@ public class Codex
     WeakReference<ArrayList<PropertySubscriberHandler>> _subscriberHandlers;
     WeakReference<ArrayList<ActionHookHandler>>         _actionHandlers;
 
-    final Handler mHandler;
+    final Handler      mHandler;
     final List<Object> mObjects;
 
     boolean mUseWeakReference;
+
+    SparseArray<String> mActions;
 
     public Codex()
     {
@@ -46,9 +51,11 @@ public class Codex
     {
         mHandler = new Handler(looper, new CallbackImpl());
         mObjects = new ArrayList<>();
+        mActions = new SparseArray<>();
     }
 
-    public void weakenReference() {
+    public void weakenReference()
+    {
         mUseWeakReference = true;
     }
 
@@ -62,13 +69,19 @@ public class Codex
         int length = hooks.size();
         for (int i = 0; i < length; i++)
         {
-            int key = hooks.keyAt(i);
+            int                     key             = hooks.keyAt(i);
             List<ActionHookHandler> registeredHooks = allHooks.get(key, new ArrayList<ActionHookHandler>());
 
             List<ActionHookHandler> handlers = hooks.valueAt(i);
 
+//            for (ActionHookHandler  handle : handlers)
+//            {
+//                LOGGER.fine(object + " key = " + key + " " + handle.info.method.getName() + " argc " + handle.info.argc);
+//            }
+
             registeredHooks.addAll(handlers);
             Collections.sort(registeredHooks);
+
 
             allHooks.put(key, registeredHooks);
         }
@@ -81,7 +94,7 @@ public class Codex
 
             for (int i = 0; i < length; i++)
             {
-                int key = properties.keyAt(i);
+                int             key     = properties.keyAt(i);
                 PropertyHandler handler = properties.valueAt(i);
                 allProperties.put(key, handler);
 
@@ -106,7 +119,7 @@ public class Codex
 
             for (int i = 0; i < length; i++)
             {
-                int key = subscribers.keyAt(i);
+                int                             key      = subscribers.keyAt(i);
                 List<PropertySubscriberHandler> handlers = subscribers.valueAt(i);
 
                 List<PropertySubscriberHandler> registeredHandlers = allSubscribers.get(key, new ArrayList<PropertySubscriberHandler>());
@@ -121,7 +134,7 @@ public class Codex
         {
             for (int i = 0; i < length; i++)
             {
-                int key = subscribers.keyAt(i);
+                int                             key      = subscribers.keyAt(i);
                 List<PropertySubscriberHandler> handlers = subscribers.valueAt(i);
 
                 PropertyHandler propertyHandler = allProperties.get(key);
@@ -147,15 +160,19 @@ public class Codex
 
         SparseArray<List<ActionHookHandler>> hooks  = ReflectionAnnotationProcessor.findActionHooks(object);
         int                                  length = hooks.size();
+
         if (length != 0)
         {
             for (int i = 0; i < length; i++)
             {
-                int key = hooks.keyAt(i);
-                List<ActionHookHandler> handlers = hooks.valueAt(i);
+                int                     key             = hooks.keyAt(i);
+                List<ActionHookHandler> handlers        = hooks.valueAt(i);
                 List<ActionHookHandler> registeredHooks = allHooks.get(key);
 
-                registeredHooks.removeAll(handlers);
+                if (registeredHooks != null)
+                {
+                    registeredHooks.removeAll(handlers);
+                }
             }
         }
 
@@ -165,8 +182,8 @@ public class Codex
         {
             for (int i = 0; i < length; i++)
             {
-                int key = properties.keyAt(i);
-                PropertyHandler handler = properties.valueAt(i);
+                int             key               = properties.keyAt(i);
+                PropertyHandler handler           = properties.valueAt(i);
                 PropertyHandler registeredHandler = allProperties.get(key);
 
                 if (handler.equals(registeredHandler))
@@ -177,16 +194,19 @@ public class Codex
         }
 
         SparseArray<List<PropertySubscriberHandler>> subscribers = ReflectionAnnotationProcessor.findPropertySubscribers(object);
-        length = hooks.size();
+        length = subscribers.size();
         if (length != 0)
         {
             for (int i = 0; i < length; i++)
             {
-                int key = subscribers.keyAt(i);
+                int                             key      = subscribers.keyAt(i);
                 List<PropertySubscriberHandler> handlers = subscribers.valueAt(i);
 
-                List<PropertySubscriberHandler> registeredSubscribers = allSubscribers.valueAt(key);
-                registeredSubscribers.removeAll(handlers);
+                List<PropertySubscriberHandler> registeredSubscribers = allSubscribers.get(key);
+                if (registeredSubscribers != null)
+                {
+                    registeredSubscribers.removeAll(handlers);
+                }
             }
         }
     }
@@ -211,6 +231,7 @@ public class Codex
     public void startAction(String name, Object... args)
     {
         int key = (name + args.length).hashCode();
+        mActions.put(key, name);
 
         mHandler.obtainMessage(START_ACTION, key, 0, args).sendToTarget();
 //        if (Looper.myLooper() != mHandler.getLooper()) {
@@ -251,7 +272,7 @@ public class Codex
         }
         handlers.retainAll(list);
 
-        for (PropertySubscriberHandler handler : list)
+        for (PropertySubscriberHandler handler : new ArrayList<>(list))
         {
             try
             {
@@ -267,7 +288,13 @@ public class Codex
     private void dispatchStartAction(int key, Object[] args)
     {
         List<ActionHookHandler> handlers = allHooks.get(key);
-        if (handlers == null) return;
+
+        if (handlers == null)
+        {
+            String action = mActions.get(key);
+            Log.w("Codex", "no action for [" + action + "] found in this Codex");
+            return;
+        }
 
         if (_actionHandlers == null || _actionHandlers.get() == null)
         {
@@ -283,10 +310,12 @@ public class Codex
         }
         handlers.retainAll(list);
 
-        for (ActionHookHandler handler : list)
+//        LOGGER.fine("list = " + list);
+        for (ActionHookHandler handler : new ArrayList<>(list))
         {
             try
             {
+//                LOGGER.fine("target = " + handler.target.get() + " " + handler.info.method.getName());
                 handler.actionHook(args);
             }
             catch (InvocationTargetException e)
@@ -334,7 +363,7 @@ public class Codex
 
             if (propertyHandler.target.get() != owner)
             {
-                throw new IllegalStateException("only owner can dispatch this property change");
+                throw new IllegalStateException("only owner can dispatch this property " + propertyHandler.info.method.getName() + " change");
             }
 
             List<PropertySubscriberHandler> handlers = allSubscribers.get(key);

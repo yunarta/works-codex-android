@@ -11,7 +11,7 @@ class PropertyHandler
 
     WeakReference<Object> target;
 
-    private ReflectionAnnotationProcessor.MethodInfo info;
+    ReflectionAnnotationProcessor.MethodInfo info;
 
     private final int hashCode;
 

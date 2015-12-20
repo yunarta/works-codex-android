@@ -1,0 +1,8 @@
+include ':codex'
+project(':codex').projectDir = new File('codex/library')
+
+include ':codex-annotations'
+project(':codex-annotations').projectDir = new File('codex/annotations')
+
+include ':codex-processor'
+project(':codex-processor').projectDir = new File('codex/processor')
