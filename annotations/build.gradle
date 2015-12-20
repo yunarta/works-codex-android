@@ -1,16 +1,16 @@
 apply plugin: 'java'
+apply plugin: 'com.mobilesolutionworks.jenkins-configure'
+apply plugin: 'com.mobilesolutionworks.bintray-publish'
 
 group 'com.mobilesolutionworks'
-version '1.1.0'
+version jenkins.version('1.1.0')
 
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
-apply from: 'https://raw.githubusercontent.com/yunarta/works-gradle-script/master/publish-works.gradle'
-
 worksPublish {
     bintray {
-        repo = 'snapshot'
+        repo = 'maven'
         name = group + ':' + project.name
     }
 
@@ -26,8 +26,4 @@ worksPublish {
 }
 
 dependencies {
-}
-
-if (plugins.hasPlugin('com.jfrog.bintray')) {
-    apply from: 'https://raw.githubusercontent.com/yunarta/works-gradle-script/master/publish-bintray-for-java-lib.gradle'
 }
