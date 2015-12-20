@@ -40,7 +40,7 @@ android {
 worksPublish {
     bintray {
         repo = 'maven'
-        name = group + ':' + project.name
+        name = group + ':codex'
     }
 
     developer {
