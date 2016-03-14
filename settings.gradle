@@ -1,11 +1,31 @@
-include ':simple-usage'
-project(':simple-usage').projectDir = new File('sample/simple-usage')
+def moduleName = "works-codex"
+def moduleRoot = rootProject.projectDir
+def loadSmallApp = true
+
+def modulesFile = new File(rootProject.projectDir, "modules.json")
+if (modulesFile.exists()) {
+    def json = new groovy.json.JsonSlurper()
+    def configuration = json.parse(modulesFile)
+
+    configuration.modules.each {
+        module ->
+            if (module.name.equals(moduleName)) {
+                moduleRoot = new File(rootProject.projectDir, module.path)
+                loadSmallApp = module.smallapp == null || module.smallapp
+            }
+    }
+}
+
+if (loadSmallApp) {
+    include ':works-codex-simple-usage'
+    project(':works-codex-simple-usage').projectDir = new File('sample/simple-usage')
+}
 
 include ':codex'
-project(':codex').projectDir = new File('library')
+project(':codex').projectDir = new File(moduleRoot, 'library')
 
 include ':codex-annotations'
-project(':codex-annotations').projectDir = new File('annotations')
+project(':codex-annotations').projectDir = new File(moduleRoot, 'annotations')
 
 include ':codex-processor'
-project(':codex-processor').projectDir = new File('processor')
+project(':codex-processor').projectDir = new File(moduleRoot, 'processor')
