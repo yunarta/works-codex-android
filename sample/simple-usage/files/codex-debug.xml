@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<codex>
+    <emitters>
+        <emitter class="com.mobilesolutionworks.codex.sample.simple.MainActivity.InternalHook">
+            <actions/>
+            <properties>
+                <property name=":activity:property" method="getProperty" type="java.lang.String">
+                    <signature method="getProperty" return="java.lang.String"/>
+                </property>
+            </properties>
+        </emitter>
+    </emitters>
+    <receivers>
+        <receiver
+            class="com.mobilesolutionworks.codex.sample.simple.MainFragment.FragmentInternalHook">
+            <actionHooks>
+                <actionHook name=":activity:actionA" method="actionHookA(double value)">
+                    <signature method="actionHookA">
+                        <params type="double"/>
+                    </signature>
+                </actionHook>
+                <actionHook name=":activity:actionB" method="actionHookB(java.lang.String value)">
+                    <signature method="actionHookB">
+                        <params type="java.lang.String"/>
+                    </signature>
+                </actionHook>
+            </actionHooks>
+            <propertySubscribers>
+                <propertySubscriber name=":activity:property"
+                                    method="onPropertyChanged(java.lang.String property)">
+                    <signature method="onPropertyChanged">
+                        <params type="java.lang.String property"/>
+                    </signature>
+                </propertySubscriber>
+            </propertySubscribers>
+        </receiver>
+    </receivers>
+    <actions/>
+    <properties>
+        <property name=":activity:property"
+                  class="com.mobilesolutionworks.codex.sample.simple.MainActivity.InternalHook" method="getProperty" type="java.lang.String">
+            <subscriber method="onPropertyChanged(java.lang.String property)"
+                        owner="com.mobilesolutionworks.codex.sample.simple.MainFragment.FragmentInternalHook"/>
+        </property>
+    </properties>
+    <orphan-actionHooks>
+        <hook name=":activity:actionA"
+              class="com.mobilesolutionworks.codex.sample.simple.MainFragment.FragmentInternalHook" method="actionHookA(double value)"/>
+        <hook name=":activity:actionB"
+              class="com.mobilesolutionworks.codex.sample.simple.MainFragment.FragmentInternalHook" method="actionHookB(java.lang.String value)"/>
+    </orphan-actionHooks>
+    <orphan-subscriber/>
+</codex>
